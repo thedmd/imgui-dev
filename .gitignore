@@ -1,0 +1,7 @@
+/.vs
+/bin
+/build
+/**/Debug
+/**/Release
+/**/*.vcxproj.user
+/**/*.ini
