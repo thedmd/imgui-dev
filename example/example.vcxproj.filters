@@ -14,6 +14,12 @@
     <ClCompile Include="imgui_impl_dx11.cpp">
       <Filter>backend</Filter>
     </ClCompile>
+    <ClCompile Include="..\addons\imgui_transformation.cpp">
+      <Filter>addons</Filter>
+    </ClCompile>
+    <ClCompile Include="support\Settings.cpp">
+      <Filter>support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\imgui\imconfig.h">
@@ -28,6 +34,15 @@
     <ClInclude Include="imgui_impl_dx11.h">
       <Filter>backend</Filter>
     </ClInclude>
+    <ClInclude Include="..\addons\imgui_transformation.h">
+      <Filter>addons</Filter>
+    </ClInclude>
+    <ClInclude Include="support\picojson.h">
+      <Filter>support</Filter>
+    </ClInclude>
+    <ClInclude Include="support\Settings.h">
+      <Filter>support</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">
@@ -36,5 +51,16 @@
     <Filter Include="backend">
       <UniqueIdentifier>{d86bf32b-ef7a-430d-8c95-0ff2007e8163}</UniqueIdentifier>
     </Filter>
+    <Filter Include="addons">
+      <UniqueIdentifier>{128d3eaa-3a2c-425a-b8c5-12bc26b13e2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="support">
+      <UniqueIdentifier>{97aee8ba-ce8d-400c-a9d6-4b7336e065da}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="support\Settings.inl">
+      <Filter>support</Filter>
+    </None>
   </ItemGroup>
 </Project>
