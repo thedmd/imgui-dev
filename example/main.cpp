@@ -413,62 +413,59 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 
         if (ImGui::RadioButton("Basic", tabIndex == 0)) { tabIndex.Value = 0; tabIndex.Save(settings); }
         if (ImGui::RadioButton("Composite", tabIndex == 1)) { tabIndex.Value = 1; tabIndex.Save(settings); }
+        if (ImGui::DragFloat2(itemSpacing.Name.c_str(), &itemSpacing->x, 0.1f, 0.0f, 50.0f))
+            itemSpacing.Save(settings);
+        if (ImGui::DragFloat(springWeight.Name.c_str(), &springWeight, 0.002f, 0.0f, 1.0f))
+            springWeight.Save(settings);
+        if (ImGui::DragFloat(alignment.Name.c_str(), &alignment, 0.002f, 0.0f, 1.0f))
+            alignment.Save(settings);
+        if (ImGui::Checkbox(showA.Name.c_str(),  &showA))  { sleep = 1; showA.Save(settings);  } ImGui::SameLine();
+        if (ImGui::Checkbox(showB.Name.c_str(),  &showB))  { sleep = 1; showB.Save(settings);  } ImGui::SameLine();
+        if (ImGui::Checkbox(showC.Name.c_str(),  &showC))  { sleep = 1; showC.Save(settings);  } ImGui::SameLine();
+        if (ImGui::Checkbox(showSA.Name.c_str(), &showSA)) { sleep = 1; showSA.Save(settings); } ImGui::SameLine();
+        if (ImGui::Checkbox(showSB.Name.c_str(), &showSB)) { sleep = 1; showSB.Save(settings); } ImGui::SameLine();
+        if (ImGui::Checkbox(autoWidth.Name.c_str(), &autoWidth)) { sleep = 1; autoWidth.Save(settings); } ImGui::SameLine();
+        if (ImGui::Checkbox(autoHeight.Name.c_str(), &autoHeight)) { sleep = 1; autoHeight.Save(settings); } ImGui::SameLine();
+        if (ImGui::Checkbox(enableSleep.Name.c_str(), &enableSleep))
+            enableSleep.Save(settings);
+        if (!enableSleep)
+            sleep = 0;
+        if (sleep)
+        {
+            ImGui::SameLine();
+            auto drawList = ImGui::GetWindowDrawList();
+            drawList->ChannelsSplit(2);
+            drawList->ChannelsSetCurrent(1);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 1));
+            ImGui::Text("Sleeping...");
+            ImGui::PopStyleColor();
+            drawList->ChannelsSetCurrent(0);
+            fillItemRect(ImColor(255, 255, 128), 4);
+            drawList->ChannelsMerge();
+        }
+
+        ImGui::Separator();
+
+        auto items                = (showA ? 1 : 0) + (showB ? 1 : 0) + (showC ? 1 : 0);
+        auto itemSpacings         = items > 1 ? items - 1 : 0;
+        auto springs              = (showSA ? 1 : 0) + (showSB ? 1 : 0);
+        auto refWidth             = 200.0f * items;
+        auto refHeight            =  80.0f * items;
+        auto refWidthWithSprings  = refWidth  + (springs * floorf(itemSpacing->x));
+        auto refHeightWithSprings = refHeight + (springs * floorf(itemSpacing->y));
+
+        auto applySizeRules = [&](ImVec2 size)
+        {
+            if (autoWidth)  size.x = 0;
+            if (autoHeight) size.y = 0;
+            return size;
+        };
+
+        static float t = 0.0f;
+        t += ImGui::GetIO().DeltaTime;
 
         if (tabIndex == 0)
         {
-            ImGui::Separator();
-
-            if (ImGui::DragFloat2(itemSpacing.Name.c_str(), &itemSpacing->x, 0.1f, 0.0f, 50.0f))
-                itemSpacing.Save(settings);
-            if (ImGui::DragFloat(springWeight.Name.c_str(), &springWeight, 0.002f, 0.0f, 1.0f))
-                springWeight.Save(settings);
-            if (ImGui::DragFloat(alignment.Name.c_str(), &alignment, 0.002f, 0.0f, 1.0f))
-                alignment.Save(settings);
-            if (ImGui::Checkbox(showA.Name.c_str(),  &showA))  { sleep = 1; showA.Save(settings);  } ImGui::SameLine();
-            if (ImGui::Checkbox(showB.Name.c_str(),  &showB))  { sleep = 1; showB.Save(settings);  } ImGui::SameLine();
-            if (ImGui::Checkbox(showC.Name.c_str(),  &showC))  { sleep = 1; showC.Save(settings);  } ImGui::SameLine();
-            if (ImGui::Checkbox(showSA.Name.c_str(), &showSA)) { sleep = 1; showSA.Save(settings); } ImGui::SameLine();
-            if (ImGui::Checkbox(showSB.Name.c_str(), &showSB)) { sleep = 1; showSB.Save(settings); } ImGui::SameLine();
-            if (ImGui::Checkbox(autoWidth.Name.c_str(), &autoWidth)) { sleep = 1; autoWidth.Save(settings); } ImGui::SameLine();
-            if (ImGui::Checkbox(autoHeight.Name.c_str(), &autoHeight)) { sleep = 1; autoHeight.Save(settings); } ImGui::SameLine();
-            if (ImGui::Checkbox(enableSleep.Name.c_str(), &enableSleep))
-                enableSleep.Save(settings);
-            if (!enableSleep)
-                sleep = 0;
-            if (sleep)
-            {
-                ImGui::SameLine();
-                auto drawList = ImGui::GetWindowDrawList();
-                drawList->ChannelsSplit(2);
-                drawList->ChannelsSetCurrent(1);
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 1));
-                ImGui::Text("Sleeping...");
-                ImGui::PopStyleColor();
-                drawList->ChannelsSetCurrent(0);
-                fillItemRect(ImColor(255, 255, 128), 4);
-                drawList->ChannelsMerge();
-            }
-
-            static float t = 0.0f;
-            t += ImGui::GetIO().DeltaTime;
-
-            ImGui::Separator();
-
-            auto items                = (showA ? 1 : 0) + (showB ? 1 : 0) + (showC ? 1 : 0);
-            auto itemSpacings         = items > 1 ? items - 1 : 0;
-            auto springs              = (showSA ? 1 : 0) + (showSB ? 1 : 0);
-            auto refWidth             = 200.0f * items;
-            auto refHeight            =  80.0f * items;
-            auto refWidthWithSprings  = refWidth  + (springs * floorf(itemSpacing->x));
-            auto refHeightWithSprings = refHeight + (springs * floorf(itemSpacing->y));
-
-            auto applySizeRules = [&](ImVec2 size)
-            {
-                if (autoWidth)  size.x = 0;
-                if (autoHeight) size.y = 0;
-                return size;
-            };
-
 # if 1
             ImGui::Text("Basic Horizontal");
 
@@ -653,6 +650,54 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 # endif
 
             ImGui::Columns(1);
+        }
+        else if (tabIndex == 1)
+        {
+            auto itemSize = ImVec2(300, 210);
+
+            BoundedWidget(itemSize, [&](ImVec2 size)
+            {
+                auto bounds = applySizeRules(size);
+
+                ImGui::BeginVertical("v1", bounds, alignment);
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, itemSpacing);
+                if (showA)
+                {
+                    Region("A", ImVec2(size.x, size.y / 3), ImColor(255, 128, 128));
+                }
+                if (showSA)
+                    ImGui::Spring(springWeight, itemSpacing->y);
+                if (showB)
+                {
+                    ImGui::BeginHorizontal("h1");
+                    Region("A", ImVec2(size.x / 6, size.y / 3), ImColor(255, 160, 160));
+                    ImGui::Spring(springWeight, itemSpacing->x);
+                    Region("B", ImVec2(size.x / 6, size.y / 3), ImColor(160, 255, 160));
+                    ImGui::Spring(1.0f - springWeight, itemSpacing->x);
+                    Region("C", ImVec2(size.x / 6, size.y / 3), ImColor(160, 160, 255));
+                    ImGui::EndHorizontal();
+                }
+                if (showSB)
+                    ImGui::Spring(1.0f - springWeight, itemSpacing->y);
+                if (showC)
+                {
+                    Region("C", ImVec2(size.x, size.y / 3), ImColor(128, 128, 255));
+                }
+                ImGui::PopStyleVar();
+                ImGui::EndVertical();
+            });
+
+
+            BoundedWidget(ImVec2(0.0f, 0.0f), [&](ImVec2 size)
+            {
+                ImGui::BeginHorizontal("h2");
+                Region("A", ImVec2(50, 70), ImColor(255, 160, 160));
+                ImGui::Spring(springWeight, itemSpacing->x);
+                Region("B", ImVec2(50, 70), ImColor(160, 255, 160));
+                ImGui::Spring(1.0f - springWeight, itemSpacing->x);
+                Region("C", ImVec2(50, 70), ImColor(160, 160, 255));
+                ImGui::EndHorizontal();
+            });
         }
 
 
