@@ -2,7 +2,7 @@
 //
 //------------------------------------------------------------------------------
 # pragma once
-# include "Settings.h"
+# include "settings.h"
 # include <sstream>
 
 template <typename T>

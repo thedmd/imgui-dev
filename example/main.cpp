@@ -12,7 +12,9 @@
 #include <dinput.h>
 #include <tchar.h>
 #include <string>
-#include "support/Settings.h"
+#include "support/settings.h"
+#include "support/property.h"
+#include "samples/samples.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -101,147 +103,6 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-//inline ImMatrix operator * (const ImMatrix& lhs, const ImMatrix& rhs)
-//{
-//    return ImMatrix::Combine(lhs, rhs);
-//}
-
-inline std::ostream& operator <<(std::ostream& stream, const ImVec2& value)
-{
-    stream << value.x << ' ' << value.y;
-    return stream;
-}
-
-inline std::istream& operator >>(std::istream& stream, ImVec2& value)
-{
-    stream >> value.x >> value.y;
-    return stream;
-}
-
-template <typename T>
-struct Property
-{
-    std::string Name;
-    T           Value;
-
-    Property(std::string_view name, T value)
-        : Name(name)
-        , Value(value)
-    {
-    }
-
-    Property(std::string_view name, T value, const ax::Settings& settings)
-        : Name(name)
-        , Value(settings.Get<T>(name).value_or(value))
-    {
-    }
-
-    void Save(ax::Settings& settings)
-    {
-        settings.Set(Name, Value);
-    }
-
-    operator const T&() const { return Value; }
-    operator       T&()       { return Value; }
-
-    const T* operator &() const { return &Value; }
-          T* operator &()       { return &Value; }
-
-    const T* operator->() const { return &Value; }
-          T* operator->()       { return &Value; }
-};
-
-template <typename T, typename... Args>
-auto MakeProperty(std::string_view name, T&& value, Args&&... args)
-{
-    return Property<std::decay_t<T>>(name, std::forward<T>(value), std::forward<Args>(args)...);
-}
-
-
-void DrawRegion(const char* name, ImColor color, float expand = 0.0f)
-{
-    auto drawList = ImGui::GetWindowDrawList();
-    auto a = ImGui::GetItemRectMin();
-    auto b = ImGui::GetItemRectMax();
-    drawList->AddRectFilled(
-        a - ImVec2(expand, expand),
-        b + ImVec2(expand, expand),
-        color);
-    if (name)
-    {
-        char buffer[256];
-        snprintf(buffer, 255, "%s\n%.0f x %0.f", name, (b.x - a.x), (b.y - a.y));
-        auto textSize = ImGui::CalcTextSize(buffer, nullptr);
-        drawList->AddText((b + a) * 0.5f - textSize * 0.5f, IM_COL32(0, 0, 0, 255), buffer);
-    }
-}
-
-void Region(const char* name, ImVec2 size, ImColor color)
-{
-    ImGui::Dummy(size);
-    DrawRegion(name, color);
-}
-
-void DrawItemRect(ImColor color, float expand = 0.0f)
-{
-    ImGui::GetWindowDrawList()->AddRect(
-        ImGui::GetItemRectMin() - ImVec2(expand, expand),
-        ImGui::GetItemRectMax() + ImVec2(expand, expand),
-        color);
-};
-
-template <typename F>
-void BoundedWidget(ImVec2 size, F&& f)
-{
-    const ImColor color(255, 255, 255);
-    const float frame = 5;
-    const float padding = 3;
-
-    auto lastItemSpacing = ImGui::GetStyle().ItemSpacing;
-
-    ImGui::BeginGroup();
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-    ImGui::Dummy(ImVec2(0.0f, padding + frame));
-    ImGui::Dummy(ImVec2(padding + frame, 0.0f));
-    ImGui::SameLine();
-
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, lastItemSpacing);
-    f(size);
-    ImGui::PopStyleVar();
-
-    DrawItemRect(ImColor(255, 255, 255), 1);
-    auto itemMin = ImGui::GetItemRectMin();
-    auto itemMax = ImGui::GetItemRectMax();
-
-    ImGui::SameLine();
-    ImGui::Dummy(ImVec2(padding + frame, 0.0f));
-    ImGui::Dummy(ImVec2(0.0f, padding + frame));
-    ImGui::PopStyleVar();
-    ImGui::EndGroup();
-
-    auto drawList = ImGui::GetWindowDrawList();
-    drawList->AddRectFilled(
-        ImVec2(itemMin.x, itemMin.y - padding - frame),
-        ImVec2(itemMax.x, itemMin.y - padding),
-        color);
-
-    drawList->AddRectFilled(
-        ImVec2(itemMin.x, itemMax.y + padding),
-        ImVec2(itemMax.x, itemMax.y + padding + frame),
-        color);
-
-    drawList->AddRectFilled(
-        ImVec2(itemMin.x - padding - frame, itemMin.y),
-        ImVec2(itemMin.x - padding,         itemMax.y),
-        color);
-
-    drawList->AddRectFilled(
-        ImVec2(itemMax.x + padding,         itemMin.y),
-        ImVec2(itemMax.x + padding + frame, itemMax.y),
-        color);
-}
-
-
 int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int /*nShowCmd*/)
 //int main(int, char**)
 {
@@ -276,6 +137,44 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     ax::Settings settings;
     settings.Load("example.json");
 
+    auto samples = CreateSamples(settings);
+
+    auto configCurrentSample = MakeProperty<std::string>("Main.CurrentSample", "", settings);
+    Sample* currentSample = nullptr;
+
+    auto findSample = [&samples](std::string_view name) -> Sample*
+    {
+        for (auto& sample : samples)
+        {
+            if (sample->Name() == name)
+                return sample.get();
+        }
+
+        return nullptr;
+    };
+
+    auto setCurrentSample = [&configCurrentSample, &currentSample](Sample* sample)
+    {
+        if (currentSample)
+        {
+            currentSample->Finalize();
+            configCurrentSample.Value.clear();
+        }
+
+        currentSample = sample;
+
+        if (currentSample)
+        {
+            configCurrentSample.Value = currentSample->Name();
+            currentSample->Initialize();
+        }
+    };
+
+    if (auto lastSample = findSample(configCurrentSample.Value))
+        setCurrentSample(lastSample);
+    else if (!samples.empty())
+        setCurrentSample(samples[0].get());
+
     //ImGuiIO& io = ImGui::GetIO();
     //io.SaveIniCb = [](const char* buffer, size_t size)
     //{
@@ -290,10 +189,6 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     //};
 
 
-
-    // Setup ImGui binding
-    ImGui_ImplDX11_Init(hwnd, g_pd3dDevice, g_pd3dDeviceContext);
-
     // Load Fonts
     // (there is a default font, this is only if you want to change it. see extra_fonts/README.txt for more details)
     //ImGuiIO& io = ImGui::GetIO();
@@ -306,14 +201,14 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 
 //     bool show_test_window = true;
 //     bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f * 0.5f, 0.55f * 0.5f, 0.60f * 0.5f, 1.00f);
+    //ImVec4 clear_color = ImVec4(0.45f * 0.5f, 0.55f * 0.5f, 0.60f * 0.5f, 1.00f);
+    ImVec4 clear_color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
 
 //     auto& style = ImGui::GetStyle();
 //     style.Colors[ImGuiCol_WindowBg] = ImColor(255, 255, 255);
 //     style.ItemSpacing = ImVec2(10, 10);
 //     style.Colors[ImGuiCol_Text] = ImColor(0, 0, 0);
 //     style.Colors[ImGuiCol_CheckMark] = ImColor(110, 110, 110);
-    int sleep = 0;
 
     // Main loop
     MSG msg;
@@ -332,30 +227,68 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         }
         ImGui_ImplDX11_NewFrame();
 
-        if (sleep > 0)
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+        ImGui::SetNextWindowSize(io.DisplaySize);
+        ImGui::SetNextWindowBgAlpha(0.0f); // Transparent background
+        auto windowFlags =
+             ImGuiWindowFlags_NoMove
+            |ImGuiWindowFlags_NoResize
+            |ImGuiWindowFlags_NoTitleBar
+            |ImGuiWindowFlags_NoSavedSettings
+            |ImGuiWindowFlags_NoFocusOnAppearing
+            |ImGuiWindowFlags_NoBringToFrontOnFocus
+            |ImGuiWindowFlags_AlwaysAutoResize
+            |ImGuiWindowFlags_NoNav;
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        auto showWindows = ImGui::Begin("Sample View", nullptr, windowFlags);
+        ImGui::PopStyleVar();
+        if (showWindows)
         {
-            Sleep(1000);
-            --sleep;
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Sample:");
+            ImGui::SameLine();
+
+            if (ImGui::BeginCombo("##Sample", currentSample ? currentSample->Name() : ""))
+            {
+                for (auto& sample : samples)
+                {
+                    auto isCurrentSample = sample.get() == currentSample;
+                    if (ImGui::Selectable(sample->Name(), isCurrentSample))
+                        setCurrentSample(sample.get());
+                    if (isCurrentSample)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Separator();
+
+            if (currentSample)
+                currentSample->Frame();
+
+            ImGui::End();
         }
 
-        auto origin = ImGui::GetCursorScreenPos();
+        ///*
+# if defined(IMGUI_EXPERIMENTAL) || 1
 
-# if defined(IMGUI_EXPERIMENTAL)
-        ImGui::GetCurrentContext()->OverlayDrawList.AddText(ImVec2(10, 10), IM_COL32_WHITE, "Experimental");
-# else
-        ImGui::GetCurrentContext()->OverlayDrawList.AddText(ImVec2(10, 10), IM_COL32_WHITE, "Master");
-# endif
-        auto drawRect2 = [](ImVec2 position, ImVec2 size, ImColor color, float padding = 0.0f)
+        auto borderColor = ImColor(255, 255, 255, 255);
+
+        ImVec2 bounds  = ImVec2(     600,      400);
+        ImVec2 boundsH = ImVec2(bounds.x,      340);
+        ImVec2 boundsV = ImVec2(      80, bounds.y);
+
+        bool v_first = false;
+        auto v0_width = 200.0f;
+        auto v1_width = 100.0f;
+
+        auto drawRect = [](float w, float h, ImColor color, float expand = 0.0f)
         {
             ImGui::GetWindowDrawList()->AddRect(
-                position - ImVec2(padding, padding), position + size + ImVec2(padding, padding), color);
+                ImGui::GetCursorScreenPos() - ImVec2(expand, expand),
+                ImGui::GetCursorScreenPos() + ImVec2(w + expand, h + expand),
+                color);
         };
-
-        //auto fillRect = [](ImVec2 position, ImVec2 size, ImColor color)
-        //{
-        //    ImGui::GetWindowDrawList()->AddRectFilled(
-        //        position, position + size, color);
-        //};
 
         auto drawItemRect = [](ImColor color, float expand = 0.0f)
         {
@@ -381,458 +314,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
                 color);
         };
 
-        auto drawRect = [](float w, float h, ImColor color, float expand = 0.0f)
-        {
-            ImGui::GetWindowDrawList()->AddRect(
-                ImGui::GetCursorScreenPos() - ImVec2(expand, expand),
-                ImGui::GetCursorScreenPos() + ImVec2(w + expand, h + expand),
-                color);
-        };
-
-# if defined(IMGUI_EXPERIMENTAL) || 1
-        auto borderColor = ImColor(0, 0, 0, 255);
-
-        ImVec2 bounds  = ImVec2(     600,      400);
-        ImVec2 boundsH = ImVec2(bounds.x,       40);
-        ImVec2 boundsV = ImVec2(      80, bounds.y);
-
-        auto& style = ImGui::GetStyle();
-
-        static auto tabIndex      = MakeProperty("Tab Index", 0, settings);
-        static auto itemSpacing   = MakeProperty("Layout Item Spacing", style.ItemSpacing, settings);
-        static auto springWeight  = MakeProperty("Spring Weight", 0.5f, settings);
-        static auto alignment     = MakeProperty("Alignment", 0.5f, settings);
-        static auto showA         = MakeProperty("A", true, settings);
-        static auto showB         = MakeProperty("B", true, settings);
-        static auto showC         = MakeProperty("C", true, settings);
-        static auto showSA        = MakeProperty("Spring A", true, settings);
-        static auto showSB        = MakeProperty("Spring B", true, settings);
-        static auto autoWidth     = MakeProperty("Auto Width", false, settings);
-        static auto autoHeight    = MakeProperty("Auto Height", false, settings);
-        static auto enableSleep   = MakeProperty("Enable Sleep", false, settings);
-
-        if (ImGui::RadioButton("Basic", tabIndex == 0)) { tabIndex.Value = 0; tabIndex.Save(settings); }
-        if (ImGui::RadioButton("Composite", tabIndex == 1)) { tabIndex.Value = 1; tabIndex.Save(settings); }
-        if (ImGui::DragFloat2(itemSpacing.Name.c_str(), &itemSpacing->x, 0.1f, 0.0f, 50.0f))
-            itemSpacing.Save(settings);
-        if (ImGui::DragFloat(springWeight.Name.c_str(), &springWeight, 0.002f, 0.0f, 1.0f))
-            springWeight.Save(settings);
-        if (ImGui::DragFloat(alignment.Name.c_str(), &alignment, 0.002f, 0.0f, 1.0f))
-            alignment.Save(settings);
-        if (ImGui::Checkbox(showA.Name.c_str(),  &showA))  { sleep = 1; showA.Save(settings);  } ImGui::SameLine();
-        if (ImGui::Checkbox(showB.Name.c_str(),  &showB))  { sleep = 1; showB.Save(settings);  } ImGui::SameLine();
-        if (ImGui::Checkbox(showC.Name.c_str(),  &showC))  { sleep = 1; showC.Save(settings);  } ImGui::SameLine();
-        if (ImGui::Checkbox(showSA.Name.c_str(), &showSA)) { sleep = 1; showSA.Save(settings); } ImGui::SameLine();
-        if (ImGui::Checkbox(showSB.Name.c_str(), &showSB)) { sleep = 1; showSB.Save(settings); } ImGui::SameLine();
-        if (ImGui::Checkbox(autoWidth.Name.c_str(), &autoWidth)) { sleep = 1; autoWidth.Save(settings); } ImGui::SameLine();
-        if (ImGui::Checkbox(autoHeight.Name.c_str(), &autoHeight)) { sleep = 1; autoHeight.Save(settings); } ImGui::SameLine();
-        if (ImGui::Checkbox(enableSleep.Name.c_str(), &enableSleep))
-            enableSleep.Save(settings);
-        if (!enableSleep)
-            sleep = 0;
-        if (sleep)
-        {
-            ImGui::SameLine();
-            auto drawList = ImGui::GetWindowDrawList();
-            drawList->ChannelsSplit(2);
-            drawList->ChannelsSetCurrent(1);
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 1));
-            ImGui::Text("Sleeping...");
-            ImGui::PopStyleColor();
-            drawList->ChannelsSetCurrent(0);
-            fillItemRect(ImColor(255, 255, 128), 4);
-            drawList->ChannelsMerge();
-        }
-
-        ImGui::Separator();
-
-        auto items                = (showA ? 1 : 0) + (showB ? 1 : 0) + (showC ? 1 : 0);
-        auto itemSpacings         = items > 1 ? items - 1 : 0;
-        auto springs              = (showSA ? 1 : 0) + (showSB ? 1 : 0);
-        auto refWidth             = 200.0f * items;
-        auto refHeight            =  80.0f * items;
-        auto refWidthWithSprings  = refWidth  + (springs * floorf(itemSpacing->x));
-        auto refHeightWithSprings = refHeight + (springs * floorf(itemSpacing->y));
-
-        auto applySizeRules = [&](ImVec2 size)
-        {
-            if (autoWidth)  size.x = 0;
-            if (autoHeight) size.y = 0;
-            return size;
-        };
-
-        static float t = 0.0f;
-        t += ImGui::GetIO().DeltaTime;
-
-        if (tabIndex == 0)
-        {
 # if 1
-            ImGui::Text("Basic Horizontal");
-
-            BoundedWidget(ImVec2(refWidth + itemSpacings * floorf(itemSpacing->x), boundsH.y), [&](ImVec2 size)
-            {
-                ImGui::BeginHorizontal("h1", applySizeRules(size));
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(itemSpacing->x, style.ItemSpacing.y));
-                if (showA)
-                    Region("A", ImVec2(200, size.y), ImColor(255, 128, 128));
-                if (showB)
-                    Region("B", ImVec2(200, size.y), ImColor(128, 255, 128));
-                if (showC)
-                    Region("C", ImVec2(200, size.y), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndHorizontal();
-            });
-# endif
-
-# if 1
-            ImGui::Text("Basic Horizontal With Zero Springs");
-
-            BoundedWidget(ImVec2(refWidthWithSprings, boundsH.y), [&](ImVec2 size)
-            {
-                ImGui::BeginHorizontal("h2", applySizeRules(size));
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, style.ItemSpacing.y));
-                if (showA)
-                    Region("A", ImVec2(200, size.y), ImColor(255, 128, 128));
-                if (showSA)
-                    ImGui::Spring(0.0f, itemSpacing->x);
-                if (showB)
-                    Region("B", ImVec2(200, size.y), ImColor(128, 255, 128));
-                if (showSB)
-                    ImGui::Spring(0.0f, itemSpacing->x);
-                if (showC)
-                    Region("C", ImVec2(200, size.y), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndHorizontal();
-            });
-# endif
-
-# if 1
-            ImGui::Text("Basic Horizontal With Springs");
-
-            BoundedWidget(ImVec2(refWidthWithSprings, boundsH.y), [&](ImVec2 size)
-            {
-                ImGui::BeginHorizontal("h3", applySizeRules(size));
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, style.ItemSpacing.y));
-                if (showA)
-                    Region("A", ImVec2(200, size.y), ImColor(255, 128, 128));
-                if (showSA)
-                    ImGui::Spring(springWeight, itemSpacing->x);
-                if (showB)
-                    Region("B", ImVec2(100, size.y), ImColor(128, 255, 128));
-                if (showSB)
-                    ImGui::Spring(1.0f - springWeight, itemSpacing->x);
-                if (showC)
-                    Region("C", ImVec2(200, size.y), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndHorizontal();
-            });
-# endif
-
-# if 1
-            ImGui::Text("Vertical Alignment");
-
-            BoundedWidget(ImVec2(refWidthWithSprings, boundsH.y), [&](ImVec2 size)
-            {
-                ImGui::BeginHorizontal("ch1", applySizeRules(size), alignment);
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, style.ItemSpacing.y));
-                if (showA)
-                    Region("A", ImVec2(200, size.y), ImColor(255, 128, 128));
-                if (showSA)
-                    ImGui::Spring(0.0f, itemSpacing->x);
-                if (showB)
-                    Region("B", ImVec2(200, size.y / 4), ImColor(128, 255, 128));
-                if (showSB)
-                    ImGui::Spring(0.0f, itemSpacing->x);
-                if (showC)
-                    Region("C", ImVec2(200, size.y), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndHorizontal();
-            });
-# endif
-
-            ImGui::Separator();
-
-            ImGui::Columns(4, 0, false);
-
-# if 1
-            ImGui::Text("\nBasic Vertical");
-
-            BoundedWidget(ImVec2(boundsV.x, refHeight + itemSpacings * floorf(itemSpacing->y)), [&](ImVec2 size)
-            {
-                ImGui::BeginVertical("v1", applySizeRules(size));
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, itemSpacing->y));
-                if (showA)
-                    Region("A", ImVec2(size.x, 80), ImColor(255, 128, 128));
-                if (showB)
-                    Region("B", ImVec2(size.x, 80), ImColor(128, 255, 128));
-                if (showC)
-                    Region("C", ImVec2(size.x, 80), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndVertical();
-            });
-
-            ImGui::NextColumn();
-# endif
-
-# if 1
-            ImGui::Text(" Basic Vertical\n"
-                        "With Zero Springs");
-
-            BoundedWidget(ImVec2(boundsV.x, refHeightWithSprings), [&](ImVec2 size)
-            {
-                ImGui::BeginVertical("v2", applySizeRules(size));
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 0.0f));
-                if (showA)
-                    Region("A", ImVec2(size.x, 80), ImColor(255, 128, 128));
-                if (showSA)
-                    ImGui::Spring(0.0f, itemSpacing->y);
-                if (showB)
-                    Region("B", ImVec2(size.x, 80), ImColor(128, 255, 128));
-                if (showSB)
-                    ImGui::Spring(0.0f, itemSpacing->y);
-                if (showC)
-                    Region("C", ImVec2(size.x, 80), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndVertical();
-            });
-
-            ImGui::NextColumn();
-# endif
-
-# if 1
-            ImGui::Text("Basic Vertical\n"
-                        " With Springs");
-
-            BoundedWidget(ImVec2(boundsV.x, refHeightWithSprings), [&](ImVec2 size)
-            {
-                ImGui::BeginVertical("v3", applySizeRules(size));
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 0.0f));
-                if (showA)
-                    Region("A", ImVec2(size.x, 80), ImColor(255, 128, 128));
-                if (showSA)
-                    ImGui::Spring(springWeight, itemSpacing->y);
-                if (showB)
-                    Region("B", ImVec2(size.x, 40), ImColor(128, 255, 128));
-                if (showSB)
-                    ImGui::Spring(1.0f - springWeight, itemSpacing->y);
-                if (showC)
-                    Region("C", ImVec2(size.x, 80), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndVertical();
-            });
-
-            ImGui::NextColumn();
-# endif
-
-# if 1
-            ImGui::Text("Horizontal\n"
-                        "Alignment");
-
-            BoundedWidget(ImVec2(boundsV.x, refHeightWithSprings), [&](ImVec2 size)
-            {
-                ImGui::BeginVertical("cv1", applySizeRules(size), alignment);
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, 0.0f));
-                if (showA)
-                    Region("A", ImVec2(size.x, 80), ImColor(255, 128, 128));
-                if (showSA)
-                    ImGui::Spring(0.0f, itemSpacing->y);
-                if (showB)
-                    Region("B", ImVec2(size.x / 4, 80), ImColor(128, 255, 128));
-                if (showSB)
-                    ImGui::Spring(0.0f, itemSpacing->y);
-                if (showC)
-                    Region("C", ImVec2(size.x, 80), ImColor(128, 128, 255));
-                ImGui::PopStyleVar();
-                ImGui::EndVertical();
-            });
-
-            ImGui::NextColumn();
-# endif
-
-            ImGui::Columns(1);
-        }
-        else if (tabIndex == 1)
-        {
-            auto itemSize = ImVec2(300, 210);
-
-            BoundedWidget(itemSize, [&](ImVec2 size)
-            {
-                auto bounds = applySizeRules(size);
-
-                ImGui::BeginVertical("v1", bounds, alignment);
-                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, itemSpacing);
-                if (showA)
-                {
-                    Region("A", ImVec2(size.x, size.y / 3), ImColor(255, 128, 128));
-                }
-                if (showSA)
-                    ImGui::Spring(springWeight, itemSpacing->y);
-                if (showB)
-                {
-                    ImGui::BeginHorizontal("h1");
-                    Region("A", ImVec2(size.x / 6, size.y / 3), ImColor(255, 160, 160));
-                    ImGui::Spring(springWeight, itemSpacing->x);
-                    Region("B", ImVec2(size.x / 6, size.y / 3), ImColor(160, 255, 160));
-                    ImGui::Spring(1.0f - springWeight, itemSpacing->x);
-                    Region("C", ImVec2(size.x / 6, size.y / 3), ImColor(160, 160, 255));
-                    ImGui::EndHorizontal();
-                }
-                if (showSB)
-                    ImGui::Spring(1.0f - springWeight, itemSpacing->y);
-                if (showC)
-                {
-                    Region("C", ImVec2(size.x, size.y / 3), ImColor(128, 128, 255));
-                }
-                ImGui::PopStyleVar();
-                ImGui::EndVertical();
-            });
-
-
-            BoundedWidget(ImVec2(0.0f, 0.0f), [&](ImVec2 size)
-            {
-                ImGui::BeginHorizontal("h2");
-                Region("A", ImVec2(50, 70), ImColor(255, 160, 160));
-                ImGui::Spring(springWeight, itemSpacing->x);
-                Region("B", ImVec2(50, 70), ImColor(160, 255, 160));
-                ImGui::Spring(1.0f - springWeight, itemSpacing->x);
-                Region("C", ImVec2(50, 70), ImColor(160, 160, 255));
-                ImGui::EndHorizontal();
-            });
-        }
-
-
-
-
-        //ImGui::Text("Basic Vertical");
-
-        //ImGui::Dummy(ImVec2(5, 3 * boundsH.y + 2 * floorf(itemSpacing->y)));
-        //drawRegion("ref", ImColor(255, 255, 255));
-        //ImGui::SameLine();
-        //ImGui::BeginVertical("v1", boundsH);
-        //if (!useSprings)
-        //    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x, itemSpacing->y));
-        //ImGui::Dummy(ImVec2(200, boundsH.y));
-        //drawRegion("A", ImColor(255, 128, 128));
-        //if (useSprings)
-        //    ImGui::Spring(1.0f);
-        //ImGui::Dummy(ImVec2(200, boundsH.y));
-        //drawRegion("B", ImColor(128, 255, 128));
-        //if (useSprings)
-        //    ImGui::Spring(1.0f);
-        //ImGui::Dummy(ImVec2(200, boundsH.y));
-        //drawRegion("C", ImColor(128, 128, 255));
-        //if (!useSprings)
-        //    ImGui::PopStyleVar();
-        //ImGui::EndVertical();
-
-        /*
-        drawRect(600, boundsH.y, borderColor, 2);
-        ImGui::BeginHorizontal("h1", boundsH);
-            if (h_first)
-            {
-                ImGui::Dummy(ImVec2(200, boundsH.y));
-                fillItemRect(ImColor(255, 128, 128));
-            }
-            //ImGui::BeginVertical("v1");
-            //ImGui::Dummy(ImVec2(200, boundsH.y / 2));
-            //fillItemBounds(ImColor(255, 128, 128));
-            ImGui::Spring(0, 0);
-            //ImGui::Dummy(ImVec2(200, boundsH.y / 2));
-            //fillItemBounds(ImColor(128, 128, 255));
-            //ImGui::EndVertical();
-        //ImGui::Spring(0,0);
-            //ImGui::BeginHorizontal("h1");
-                ImGui::BeginVertical("v1");
-                ImGui::Dummy(ImVec2(h0_width, 40));
-                fillItemRect(ImColor(128, 255, 128));
-                ImGui::Spring(0, 20);
-                ImGui::Dummy(ImVec2(h1_width, 20));
-                fillItemRect(ImColor(128, 128, 255));
-                ImGui::Spring(1, 0);
-                ImGui::EndVertical();
-            ImGui::Spring(0, 0);
-            //ImGui::Dummy(ImVec2(200, boundsH.y));
-            //fillItemBounds(ImColor(255, 128, 255));
-            //ImGui::EndHorizontal();
-            //ImGui::Spring(1, 0);
-            if (!h_first)
-            {
-                ImGui::Dummy(ImVec2(200, boundsH.y));
-                fillItemRect(ImColor(255, 128, 128));
-            }
-        ImGui::EndHorizontal();
-        drawItemRect(borderColor, 2);
-
-        const bool testHorizontal = fmodf(t, 1.0f) > 0.5f;
-        if (testHorizontal)
-            ImGui::SameLine();
-        ImGui::Dummy(ImVec2(40, 40));
-        fillItemRect(ImColor(255, 64, 255));
-
-        if (testHorizontal)
-            ImGui::Dummy(ImVec2(40, 40));
-
-        */
-
-        //ImGui::EndGroup();
-
-        ImGui::NewLine();
-# endif
-
-        // Vertical
-        //drawRect(boundsV.x, 400, borderColor, 2);
-        //ImGui::BeginGroup();
-        //ImGui::Dummy(ImVec2(boundsV.x, 100));
-        //fillItemRect(ImColor(255, 128, 128));
-        //ImGui::SetCursorPosY(ImGui::GetCursorPosY() - ImGui::GetStyle().ItemSpacing.y);
-        ////ImGui::Spacing();
-        ////ImGui::SameColumn();
-        //ImGui::Dummy(ImVec2(boundsV.x, 300));
-        //fillItemRect(ImColor(128, 255, 128));
-        //ImGui::EndGroup();
-
-        ///*
-# if defined(IMGUI_EXPERIMENTAL)
-        ImGui::SameLine();
-        drawRect(boundsV.x, 400, borderColor, 2);
-        ImGui::BeginVertical("v1", boundsH);
-        if (v_first)
-        {
-            ImGui::Dummy(ImVec2(boundsV.x, 100));
-            fillItemRect(ImColor(255, 128, 128));
-        }
-        ImGui::Spring(0, 0);
-            ImGui::BeginHorizontal("h1");
-            ImGui::Dummy(ImVec2(40, v0_width));
-            fillItemRect(ImColor(128, 255, 128));
-            ImGui::Spring(0, 20);
-            ImGui::Dummy(ImVec2(20, v1_width));
-            fillItemRect(ImColor(128, 128, 255));
-            ImGui::Spring(1, 0);
-            ImGui::EndHorizontal();
-            ImGui::Spring(0, 0);
-
-        if (!v_first)
-        {
-            ImGui::Dummy(ImVec2(boundsV.x, 100));
-            fillItemRect(ImColor(255, 128, 128));
-        }
-        //ImGui::Dummy(ImVec2(boundsV.x, 300));
-        //fillItemBounds(ImColor(128, 255, 128));
-        ImGui::EndVertical();
-        drawItemRect(borderColor, 2);
-
-        if (testHorizontal)
-            ImGui::SameLine();
-        ImGui::Dummy(ImVec2(40,40));
-        fillItemRect(ImColor(255, 64, 255));
-
-        if (testHorizontal)
-            ImGui::Dummy(ImVec2(40, 40));
-
-# if 0
-        ImGui::SetCursorPos(ImVec2(350, 450));
-
         ImGui::BeginVertical("node");
             ImGui::BeginHorizontal("header");
                 ImGui::TextUnformatted("Do N");
@@ -843,7 +325,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
             ImGui::Spring(0,0);
 
             ImGui::BeginHorizontal("content");
-                ImGui::BeginVertical("inputs");
+                ImGui::BeginVertical("inputs", ImVec2(0.0f, 0.0f), 0.0f);
                     ImGui::Button("X"); ImGui::SameLine(); ImGui::TextUnformatted("Enter");
                     ImGui::Spring(0);
                     ImGui::Button("X"); ImGui::SameLine(); ImGui::TextUnformatted("N");
@@ -855,7 +337,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
                 //fillBounds(ImColor(1.0f, 1.0f, 1.0f, 0.2f));
                 //showBounds(ImColor(255, 0, 0));
                 ImGui::Spring();
-                ImGui::BeginVertical("outputs");
+                ImGui::BeginVertical("outputs", ImVec2(0.0f, 0.0f), 1.0f);
                     ImGui::TextUnformatted("Exit");    ImGui::SameLine(); ImGui::Button("X");
                     ImGui::Spring(0);
                     ImGui::TextUnformatted("Counter"); ImGui::SameLine(); ImGui::Button("X");
@@ -983,7 +465,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         //ImGui::SetWindowHitTest("Debug", nullptr);
 
 
-        ImGui::ShowTestWindow();
+        //ImGui::ShowTestWindow();
 
 # if 0 // transformation
         static float scale = 1.0f;
@@ -1066,6 +548,13 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
                                      //g_pSwapChain->Present(0, 0); // Present without vsync
     }
 
+    configCurrentSample.Save(settings);
+
+    setCurrentSample(nullptr);
+
+    //for (auto& sample : samples)
+    //    sample->Finalize();
+
     ImGui_ImplDX11_Shutdown();
     ImGui::DestroyContext();
 
@@ -1077,3 +566,4 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 
     return 0;
 }
+

@@ -1,4 +1,4 @@
-# include "Settings.h"
+# include "settings.h"
 # include "picojson.h"
 # include <fstream>
 # include <algorithm>
