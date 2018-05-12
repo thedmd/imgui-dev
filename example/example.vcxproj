@@ -171,8 +171,10 @@
     <ClCompile Include="..\imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui_impl_dx11.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="samples\blueprint-node.cpp" />
     <ClCompile Include="samples\canvas.cpp" />
     <ClCompile Include="samples\layouts.cpp" />
+    <ClCompile Include="samples\transformation.cpp" />
     <ClCompile Include="support\settings.cpp" />
   </ItemGroup>
   <ItemGroup>

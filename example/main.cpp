@@ -198,6 +198,10 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     //io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyClean.ttf", 13.0f);
     //io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyTiny.ttf", 10.0f);
     //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    io.Fonts->AddFontFromFileTTF(R"(c:\Windows\Fonts\arial.ttf)", 16.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    io.Fonts->Build();
+    ImGui_ImplDX11_InvalidateDeviceObjects();
+    ImGui_ImplDX11_CreateDeviceObjects();
 
 //     bool show_test_window = true;
 //     bool show_another_window = false;
@@ -272,7 +276,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         ///*
 # if defined(IMGUI_EXPERIMENTAL) || 1
 
-        auto borderColor = ImColor(255, 255, 255, 255);
+        auto borderColor = ImColor(255, 255, 255, 64);
 
         ImVec2 bounds  = ImVec2(     600,      400);
         ImVec2 boundsH = ImVec2(bounds.x,      340);
@@ -313,46 +317,6 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
                 ImGui::GetCursorScreenPos() + ImVec2(w + expand, h + expand),
                 color);
         };
-
-# if 1
-        ImGui::BeginVertical("node");
-            ImGui::BeginHorizontal("header");
-                ImGui::TextUnformatted("Do N");
-                ImGui::Spring();
-                ImGui::Button("X");
-            ImGui::EndHorizontal();
-            drawItemRect(borderColor, 2);
-            ImGui::Spring(0,0);
-
-            ImGui::BeginHorizontal("content");
-                ImGui::BeginVertical("inputs", ImVec2(0.0f, 0.0f), 0.0f);
-                    ImGui::Button("X"); ImGui::SameLine(); ImGui::TextUnformatted("Enter");
-                    ImGui::Spring(0);
-                    ImGui::Button("X"); ImGui::SameLine(); ImGui::TextUnformatted("N");
-                    ImGui::Spring(0);
-                    ImGui::Button("X"); ImGui::SameLine(); ImGui::TextUnformatted("Reset");
-                    ImGui::Spring(1);
-                ImGui::EndVertical();
-                fillItemRect(ImColor(0,255,0,64));
-                //fillBounds(ImColor(1.0f, 1.0f, 1.0f, 0.2f));
-                //showBounds(ImColor(255, 0, 0));
-                ImGui::Spring();
-                ImGui::BeginVertical("outputs", ImVec2(0.0f, 0.0f), 1.0f);
-                    ImGui::TextUnformatted("Exit");    ImGui::SameLine(); ImGui::Button("X");
-                    ImGui::Spring(0);
-                    ImGui::TextUnformatted("Counter"); ImGui::SameLine(); ImGui::Button("X");
-                    ImGui::Spring(1);
-                    ImGui::Button("+ Add Output");
-                ImGui::EndVertical();
-                fillItemRect(ImColor(0, 255, 0, 64));
-                //fillBounds(ImColor(1.0f, 1.0f, 1.0f, 0.2f));
-                //showBounds(ImColor(255, 0, 0));
-            ImGui::EndHorizontal();
-
-        ImGui::EndVertical();
-        drawItemRect(borderColor, 2);
-# endif
-
 
 
 # endif
@@ -463,80 +427,6 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 # endif
 
         //ImGui::SetWindowHitTest("Debug", nullptr);
-
-
-        //ImGui::ShowTestWindow();
-
-# if 0 // transformation
-        static float scale = 1.0f;
-        static ImVec2 scale2 = ImVec2(1.0f, 1.0f);
-        static float angle = 0.0f;
-        static ImVec2 offset = ImVec2(0.0f, 0.0f);
-        ImGui::DragFloat("Uniform Scale", &scale, 0.01f, 0.001f, 40.0f);
-        ImGui::DragFloat2("Scale", &scale2.x, 0.01f, 0.001f, 40.0f);
-        ImGui::DragFloat("Angle", &angle, 0.01f * 0.5f * 3.1415f);
-        ImGui::DragFloat2("Translation", &offset.x, 1.0f, -1000.0f, 1000.0f);
-
-        auto size     = ImGui::GetWindowSize() - ImGui::GetCursorPos() - ImGui::GetStyle().WindowPadding;
-        auto center   = ImGui::GetCursorScreenPos() + size * 0.5f;
-        auto drawList = ImGui::GetWindowDrawList();
-
-        drawList->AddRect(
-            ImGui::GetCursorScreenPos(),
-            ImGui::GetCursorScreenPos() + size,
-            IM_COL32(255, 255, 255, 255));
-
-        ImMatrix transf = ImMatrix()
-            * ImMatrix::Scaling(scale2.x, scale2.y)
-            * ImMatrix::Translation(offset)
-            * ImMatrix::Scaling(scale, -scale)
-            * ImMatrix::Rotation(angle)
-            * ImMatrix::Translation(center)
-            ;
-
-        drawList->PushClipRect(
-            ImGui::GetCursorScreenPos() + ImVec2(1, 1),
-            ImGui::GetCursorScreenPos() + size - ImVec2(1, 1));
-
-        drawList->ApplyTransformation(transf);
-
-        drawList->ApplyTransformation(ImMatrix::Scaling(10, 10));
-        const float gridSize = 10;
-        ImVec2 correction = ImVec2(drawList->_HalfPixel.x, 0.0f);
-        for (float i = -gridSize; i <= gridSize; ++i)
-        {
-            drawList->AddLine(ImVec2(i, -gridSize) - correction, ImVec2(i, gridSize) - correction, IM_COL32(255, 200, 200, 100), 1.0f);
-            drawList->AddLine(ImVec2(-gridSize, i) - correction, ImVec2(gridSize, i) - correction, IM_COL32(200, 255, 200, 100), 1.0f);
-        }
-        drawList->AddLine(ImVec2(0, 0), ImVec2(0, gridSize), IM_COL32(80, 255, 80, 200), 3.0f);
-        drawList->AddLine(ImVec2(0, 0), ImVec2(gridSize, 0), IM_COL32(255, 80, 80, 200), 3.0f);
-        drawList->PopTransformation();
-
-        drawList->PathClear();
-        drawList->PathLineTo(
-            ImVec2(0.0f, 30.0f));
-        drawList->PathBezierCurveTo(
-            ImVec2(-40.0f, 80.0f),
-            ImVec2(-80.0f, 0.0f),
-            ImVec2(0.0f, -50.0f));
-        drawList->PathBezierCurveTo(
-            ImVec2(80.0f, 0.0f),
-            ImVec2(40.0f, 80.0f),
-            ImVec2(0.0f, 30.0f));
-
-        drawList->AddPolyline(
-            drawList->_Path.Data,
-            drawList->_Path.Size,
-            IM_COL32(255, 255, 255, 200),
-            true,
-            4.0f / drawList->_InvTransformationScale);
-
-        drawList->PathFillConvex(IM_COL32(255, 0, 0, 200));
-
-        drawList->PopTransformation();
-
-        drawList->PopClipRect();
-# endif
 
         // Rendering
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);

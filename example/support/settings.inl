@@ -53,6 +53,18 @@ inline bool ax::Settings::Get(std::string_view key, T& value) const
     return true;
 }
 
+inline bool ax::Settings::Get(std::string_view key, std::string& value) const
+{
+    auto it = Find(key);
+    if (it != m_Values.end())
+    {
+        value = it->second;
+        return true;
+    }
+    else
+        return false;
+}
+
 inline bool ax::Settings::Get(std::string_view key, std::string_view& value) const
 {
     auto it = Find(key);

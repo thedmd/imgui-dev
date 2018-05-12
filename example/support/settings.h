@@ -48,6 +48,7 @@ public:
     std::optional<T> Get(std::string_view key) const;
     template <typename T>
     bool Get(std::string_view key, T& value) const;
+    bool Get(std::string_view key, std::string& value) const;
     bool Get(std::string_view key, std::string_view& value) const;
 
     bool Remove(std::string_view key);

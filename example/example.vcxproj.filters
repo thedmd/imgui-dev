@@ -32,6 +32,12 @@
     <ClCompile Include="samples\canvas.cpp">
       <Filter>samples</Filter>
     </ClCompile>
+    <ClCompile Include="samples\transformation.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
+    <ClCompile Include="samples\blueprint-node.cpp">
+      <Filter>samples</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\imgui\imconfig.h">
