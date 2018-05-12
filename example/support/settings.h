@@ -2,7 +2,20 @@
 # include <string_view>
 # include <string>
 # include <vector>
-# include <optional>
+#ifdef __has_include                           // Check if __has_include is present
+#  if __has_include(<optional>)                // Check for a standard library
+#    include <optional>
+#  elif __has_include(<experimental/optional>) // Check for an experimental version
+#    include <experimental/optional>
+namespace std {
+using experimental::optional;
+using experimental::nullopt;
+using experimental::nullopt_t;
+} // namespace std
+#  else                                        // Not found at all
+#     error "Missing <optional>"
+#  endif
+#endif
 # include <utility>
 
 namespace ax {
@@ -53,4 +66,4 @@ private:
 
 } // namespace ax
 
-# include "Settings.inl"
+# include "settings.inl"

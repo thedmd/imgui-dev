@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "vector": "cpp",
+        "optional": "cpp",
+        "utility": "cpp"
+    },
+    "C_Cpp.intelliSenseEngineFallback": "Enabled"
+}

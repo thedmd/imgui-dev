@@ -1,7 +1,9 @@
 # include "samples.h"
 # include <iostream>
 
+# if defined(_WIN32)
 extern "C" __declspec(dllimport) void __stdcall Sleep(unsigned long dwMilliseconds);
+# endif
 
 static void DrawRegion(const char* name, ImColor color, float expand = 0.0f)
 {
@@ -168,7 +170,9 @@ struct LayoutSample: Sample
     {
         if (sleep > 0)
         {
+# if defined(_WIN32)
             Sleep(1000);
+# endif
             --sleep;
         }
 

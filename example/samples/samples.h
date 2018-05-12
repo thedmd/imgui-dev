@@ -11,7 +11,7 @@ struct Sample
 {
     Sample(ax::Settings& settings): m_SettingsPtr(&settings), m_Settings(*m_SettingsPtr) {}
     Sample(Sample&& other): m_SettingsPtr(other.m_SettingsPtr), m_Settings(*m_SettingsPtr) {}
-    Sample operator=(Sample&& other) { this->m_SettingsPtr = other.m_SettingsPtr; }
+    Sample& operator=(Sample&& other) { this->m_SettingsPtr = other.m_SettingsPtr; return *this; }
     virtual ~Sample() {}
 
     virtual const char* Name() const = 0;
