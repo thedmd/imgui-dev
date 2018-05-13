@@ -222,7 +222,8 @@ void ImGui_ImplDX11_RenderDrawData(ImDrawData* draw_data)
             }
             else
             {
-                const D3D11_RECT r = { (LONG)pcmd->ClipRect.x, (LONG)pcmd->ClipRect.y, (LONG)pcmd->ClipRect.z, (LONG)pcmd->ClipRect.w };
+                //const D3D11_RECT r = { (LONG)pcmd->ClipRect.x, (LONG)pcmd->ClipRect.y, (LONG)pcmd->ClipRect.z, (LONG)pcmd->ClipRect.w };
+                const D3D11_RECT r = { 0, 0, vp.Width, vp.Height };
                 ctx->PSSetShaderResources(0, 1, (ID3D11ShaderResourceView**)&pcmd->TextureId);
                 ctx->RSSetScissorRects(1, &r);
                 ctx->DrawIndexed(pcmd->ElemCount, idx_offset, vtx_offset);

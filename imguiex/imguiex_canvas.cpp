@@ -108,7 +108,7 @@ void ImGuiEx::Canvas::EnterLocalSpace()
     clipped_clip_rect.y = (clipped_clip_rect.y - m_StartPos.y) - m_View.RoundedOrigin.y;
     clipped_clip_rect.z = (clipped_clip_rect.z - m_StartPos.x) - m_View.RoundedOrigin.x;
     clipped_clip_rect.w = (clipped_clip_rect.w - m_StartPos.y) - m_View.RoundedOrigin.y;
-    if (m_View.InvScale > 1.0f)
+    //if (m_View.InvScale > 1.0f)
     {
         clipped_clip_rect.x *= m_View.InvScale;
         clipped_clip_rect.y *= m_View.InvScale;
@@ -147,10 +147,10 @@ void ImGuiEx::Canvas::LeaveLocalSpace()
     for (int i = m_DrawListCommadBufferSize; i < m_DrawList->CmdBuffer.size(); ++i)
     {
         auto& command = m_DrawList->CmdBuffer[i];
-        command.ClipRect.x += m_StartPos.x + m_View.RoundedOrigin.x;
-        command.ClipRect.y += m_StartPos.y + m_View.RoundedOrigin.y;
-        command.ClipRect.z += m_StartPos.x + m_View.RoundedOrigin.x;
-        command.ClipRect.w += m_StartPos.y + m_View.RoundedOrigin.y;
+        command.ClipRect.x = command.ClipRect.x * m_View.Scale + m_StartPos.x + m_View.RoundedOrigin.x;
+        command.ClipRect.y = command.ClipRect.y * m_View.Scale + m_StartPos.y + m_View.RoundedOrigin.y;
+        command.ClipRect.z = command.ClipRect.z * m_View.Scale + m_StartPos.x + m_View.RoundedOrigin.x;
+        command.ClipRect.w = command.ClipRect.w * m_View.Scale + m_StartPos.y + m_View.RoundedOrigin.y;
     }
 
     // And pop \o/

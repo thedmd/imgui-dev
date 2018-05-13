@@ -59,17 +59,32 @@ struct CanvasSample: Sample
 
     virtual void Frame() override
     {
+        static float configOriginX = 0.0f;
+        static float configOriginY = 0.0f;
+        static float configScale = 1.0f;
+
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
+        ImGui::DragFloat("Origin X", &configOriginX, 0.001f, -1.0f, 1.0f);
+        ImGui::DragFloat("Origin Y", &configOriginY, 0.001f, -1.0f, 1.0f);
+        ImGui::DragFloat("Scale",    &configScale,   0.001f, 0.01f, 15.0f);
+        ImGui::PopItemWidth();
+
         auto drawList = ImGui::GetWindowDrawList();
         //drawList->AddRectFilled(ImVec2(0.0f, 0.0f),
         //    ImGui::GetIO().DisplaySize, IM_COL32(255, 0, 0, 255));
 
-        if (ImGuiEx::BeginCanvas("canvas"))
+        auto margin = ImVec2(100.0f, 100.0f);
+        auto size   = ImGui::GetContentRegionAvail() - margin * 2;
+
+        ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() + margin);
+
+        if (ImGuiEx::BeginCanvas("canvas", size))
         {
             auto canvasContentMin  = ImGuiEx::CanvasContentMin();
             auto canvasContentMax  = ImGuiEx::CanvasContentMax();
             auto canvasContentSize = ImGuiEx::CanvasContentSize();
 
-            ImGuiEx::CanvasView(canvasContentSize * 0.5f, 0.41f);
+            ImGuiEx::CanvasView(canvasContentSize * 0.5f + ImMul(canvasContentSize * 0.5f, ImVec2(configOriginX, configOriginY)), configScale);
 
             auto canvasViewMin  = ImGuiEx::CanvasViewMin();
             auto canvasViewMax  = ImGuiEx::CanvasViewMax();
@@ -82,13 +97,16 @@ struct CanvasSample: Sample
             DrawScale(ImVec2(0.0f, 0.0f), ImVec2(0.0f, canvasViewMax.y), 100.0f, 10.0f, 0.6f);
             DrawScale(ImVec2(0.0f, 0.0f), ImVec2(0.0f, canvasViewMin.y), 100.0f, 10.0f, 0.6f);
 
-            ImGui::ArrowButton("Hello", ImGuiDir_Right);
+            ImGui::ArrowButton("Hello1", ImGuiDir_Right);
 
             ImGui::SetCursorScreenPos(ImVec2(100.0f, 100.0f));
-            ImGui::ArrowButton("Hello", ImGuiDir_Right);
+            ImGui::ArrowButton("Hello2", ImGuiDir_Right);
+
+            if (ImGui::IsItemActive())
+                ImGui::SetCursorScreenPos(ImVec2(200.0f, 200.0f));
 
             ImGui::SetCursorScreenPos(ImVec2(200.0f, 200.0f));
-            ImGui::ArrowButton("Hello", ImGuiDir_Right);
+            ImGui::ArrowButton("Hello3", ImGuiDir_Right);
 
 
             ImGuiEx::EndCanvas();
