@@ -22,16 +22,16 @@
   "Layout Item Spacing##complex": "0 0",
   "Layout Item Spacing##complex#inner1": "0 0",
   "Layout Item Spacing##complex#inner2": "0 0",
-  "Main.CurrentSample": "Layouts",
+  "Main.CurrentSample": "Canvas",
   "Show Springs": "1",
   "Spring A": "1",
   "Spring A##complex": "1",
   "Spring B": "1",
   "Spring B##complex": "1",
   "Spring Weight": "0.388",
-  "Spring Weight##complex": "0.613",
+  "Spring Weight##complex": "0.525",
   "Spring Weight##complex#inner1": "0.85",
   "Spring Weight##complex#inner2": "0.508",
   "Tab Index": "1",
-  "Width##complex": "479.805"
+  "Width##complex": "443.676"
 }

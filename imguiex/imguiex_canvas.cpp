@@ -104,10 +104,10 @@ void ImGuiEx::Canvas::EnterLocalSpace()
     ImGui::PushClipRect(m_StartPos, m_StartPos + m_CurrentSize, true);
     auto clipped_clip_rect = m_DrawList->_ClipRectStack.back();
     ImGui::PopClipRect();
-    clipped_clip_rect.x = (clipped_clip_rect.x - m_StartPos.x);
-    clipped_clip_rect.y = (clipped_clip_rect.y - m_StartPos.y);
-    clipped_clip_rect.z = (clipped_clip_rect.z - m_StartPos.x);
-    clipped_clip_rect.w = (clipped_clip_rect.w - m_StartPos.y);
+    clipped_clip_rect.x = (clipped_clip_rect.x - m_StartPos.x) - m_View.RoundedOrigin.x;
+    clipped_clip_rect.y = (clipped_clip_rect.y - m_StartPos.y) - m_View.RoundedOrigin.y;
+    clipped_clip_rect.z = (clipped_clip_rect.z - m_StartPos.x) - m_View.RoundedOrigin.x;
+    clipped_clip_rect.w = (clipped_clip_rect.w - m_StartPos.y) - m_View.RoundedOrigin.y;
     if (m_View.InvScale > 1.0f)
     {
         clipped_clip_rect.x *= m_View.InvScale;
@@ -116,6 +116,7 @@ void ImGuiEx::Canvas::EnterLocalSpace()
         clipped_clip_rect.w *= m_View.InvScale;
     }
     ImGui::PushClipRect(ImVec2(clipped_clip_rect.x, clipped_clip_rect.y), ImVec2(clipped_clip_rect.z, clipped_clip_rect.w), false);
+    //ImGui::PushClipRect(ImVec2(0.0f, 0.0f), ImGui::GetIO().DisplaySize, false);
 
     m_DrawListStartVertexIndex = m_DrawList->_VtxCurrentIdx;
 
@@ -126,7 +127,7 @@ void ImGuiEx::Canvas::EnterLocalSpace()
     for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
         io.MouseClickedPos[i] = (m_MouseClickedPosBackup[i] - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
 
-    m_ViewRect.Min = ImVec2(0.0f, 0.0f) - m_View.RoundedOrigin;
+    m_ViewRect.Min = ImVec2(0.0f, 0.0f) - m_View.RoundedOrigin * m_View.InvScale;
     m_ViewRect.Max = (m_CurrentSize - m_View.RoundedOrigin) * m_View.InvScale;
 }
 
@@ -146,10 +147,10 @@ void ImGuiEx::Canvas::LeaveLocalSpace()
     for (int i = m_DrawListCommadBufferSize; i < m_DrawList->CmdBuffer.size(); ++i)
     {
         auto& command = m_DrawList->CmdBuffer[i];
-        command.ClipRect.x += m_StartPos.x;// + m_View.Position.x;
-        command.ClipRect.y += m_StartPos.y;// + m_View.Position.y;
-        command.ClipRect.z += m_StartPos.x;// + m_View.Position.x;
-        command.ClipRect.w += m_StartPos.y;// + m_View.Position.y;
+        command.ClipRect.x += m_StartPos.x + m_View.RoundedOrigin.x;
+        command.ClipRect.y += m_StartPos.y + m_View.RoundedOrigin.y;
+        command.ClipRect.z += m_StartPos.x + m_View.RoundedOrigin.x;
+        command.ClipRect.w += m_StartPos.y + m_View.RoundedOrigin.y;
     }
 
     // And pop \o/

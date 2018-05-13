@@ -69,7 +69,7 @@ struct CanvasSample: Sample
             auto canvasContentMax  = ImGuiEx::CanvasContentMax();
             auto canvasContentSize = ImGuiEx::CanvasContentSize();
 
-            ImGuiEx::CanvasView(canvasContentSize * 0.5f, 1.5f);
+            ImGuiEx::CanvasView(canvasContentSize * 0.5f, 0.41f);
 
             auto canvasViewMin  = ImGuiEx::CanvasViewMin();
             auto canvasViewMax  = ImGuiEx::CanvasViewMax();
@@ -77,8 +77,10 @@ struct CanvasSample: Sample
 
             drawList->AddRectFilled(canvasViewMin, canvasViewMax, IM_COL32(0, 128, 128, 255));
 
-            DrawScale(ImVec2(0.0f, 0.0f), ImVec2(canvasViewSize.x, 0.0f), 100.0f, 10.0f, 0.6f);
-            DrawScale(ImVec2(0.0f, 0.0f), ImVec2(0.0f, canvasViewSize.y), 100.0f, 10.0f, 0.6f);
+            DrawScale(ImVec2(0.0f, 0.0f), ImVec2(canvasViewMax.x, 0.0f), 100.0f, 10.0f, 0.6f);
+            DrawScale(ImVec2(0.0f, 0.0f), ImVec2(canvasViewMin.x, 0.0f), 100.0f, 10.0f, 0.6f);
+            DrawScale(ImVec2(0.0f, 0.0f), ImVec2(0.0f, canvasViewMax.y), 100.0f, 10.0f, 0.6f);
+            DrawScale(ImVec2(0.0f, 0.0f), ImVec2(0.0f, canvasViewMin.y), 100.0f, 10.0f, 0.6f);
 
             ImGui::ArrowButton("Hello", ImGuiDir_Right);
 

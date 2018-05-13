@@ -307,7 +307,7 @@ static void DrawNodeFrame(const ImVec2& a, const ImVec2& b, float headerHeight, 
         ImColor(0, 0, 0, 0));
     drawList->PopClipRect();
 
-    auto lineColor = ImLerp(gradientColor, fillColor, gradientColor.Value.w);
+    auto lineColor = ImLerp(gradientColor.Value, fillColor.Value, gradientColor.Value.w);
     auto top = drawList->_Path.Size;
     drawList->PathLineTo(ImVec2(a.x, a.y + headerHeight) + drawList->_HalfPixel);
     drawList->PathLineTo(ImVec2(b.x - thickness * 0.5f, a.y + headerHeight) + drawList->_HalfPixel);

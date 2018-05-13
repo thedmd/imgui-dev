@@ -61,6 +61,8 @@ add_executable(example
     example/samples/samples.h
     example/samples/layouts.cpp
     example/samples/canvas.cpp
+    example/samples/transformation.cpp
+    example/samples/blueprint-node.cpp
     example/support/picojson.h
     example/support/property.h
     example/support/settings.h
