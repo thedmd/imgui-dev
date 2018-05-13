@@ -51,3 +51,66 @@ void ImGuiEx::EndCanvas()
 
     context->PopCanvas();
 }
+
+void ImGuiEx::CanvasView(const ImVec2& origin, float scale)
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    canvas->SetView(origin, scale);
+}
+
+ImVec2 ImGuiEx::CanvasContentMin()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    return canvas->ContentRect().Min;
+}
+
+ImVec2 ImGuiEx::CanvasContentMax()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    return canvas->ContentRect().Max;
+}
+
+ImVec2 ImGuiEx::CanvasContentSize()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    return canvas->ContentRect().GetSize();
+}
+
+ImVec2 ImGuiEx::CanvasViewMin()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    return canvas->ViewRect().Min;
+}
+
+ImVec2 ImGuiEx::CanvasViewMax()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    return canvas->ViewRect().Max;
+}
+
+ImVec2 ImGuiEx::CanvasViewSize()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    return canvas->ViewRect().GetSize();
+}

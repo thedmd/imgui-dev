@@ -86,18 +86,19 @@ private:
     Context* m_Context;
 };
 
-struct CanvasView
-{
-    ImVec2 Position = ImVec2(0.0f, 0.0f);
-    float  Scale = 1.0f;
-    float  InvScale = 1.0f;
-
-    ImMatrix LocalToWorld() const { return ImMatrix(Scale,    0.0f, 0.0f,    Scale,  Position.x,  Position.y); }
-    ImMatrix WorldToLocal() const { return ImMatrix(InvScale, 0.0f, 0.0f, InvScale, -Position.x, -Position.y); }
-};
-
 struct Canvas
 {
+    struct View
+    {
+        ImVec2 Origin        = ImVec2(0.0f, 0.0f);
+        ImVec2 RoundedOrigin = ImVec2(0.0f, 0.0f);
+        float  Scale         = 1.0f;
+        float  InvScale      = 1.0f;
+
+        ImMatrix LocalToWorld() const { return ImMatrix(Scale,    0.0f, 0.0f,    Scale,  RoundedOrigin.x,  RoundedOrigin.y); }
+        ImMatrix WorldToLocal() const { return ImMatrix(InvScale, 0.0f, 0.0f, InvScale, -RoundedOrigin.x, -RoundedOrigin.y); }
+    };
+
     Canvas(ImGuiID id);
 
     ImGuiID GetID() const { return m_ID; }
@@ -106,7 +107,15 @@ struct Canvas
     bool Begin(Canvas* parent, const ImVec2& size = ImVec2(0, 0));
     void End();
 
+    void SetView(const ImVec2& origin, float scale = 1.0f);
+
+    const ImRect& ContentRect() const { return m_ContentRect; }
+    const ImRect& ViewRect()    const { return m_ViewRect; }
+
 private:
+    void SaveInputState();
+    void RestoreInputState();
+
     void EnterLocalSpace();
     void LeaveLocalSpace();
 
@@ -116,12 +125,14 @@ private:
     ImVec2 m_Size; // Size as user passed in
     ImVec2 m_StartPos;
     ImVec2 m_CurrentSize;
+    ImRect m_ContentRect;
 
     ImDrawList* m_DrawList = nullptr;
     int m_DrawListCommadBufferSize;
     int m_DrawListStartVertexIndex;
 
-    CanvasView m_View;
+    View       m_View;
+    ImRect     m_ViewRect;
 
     ImVec2 m_MousePosBackup;
     ImVec2 m_MousePosPrevBackup;

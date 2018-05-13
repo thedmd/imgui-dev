@@ -14,6 +14,7 @@ bool ImGuiEx::Canvas::Begin(Canvas* parent, const ImVec2& size)
     m_Size        = size;
     m_StartPos    = ImGui::GetCursorScreenPos();
     m_CurrentSize = ImSelectPositive(size, ImGui::GetContentRegionAvail());
+    m_ContentRect = ImRect(m_StartPos, m_StartPos + m_CurrentSize);
     m_DrawList    = ImGui::GetWindowDrawList();
 
     auto bounding_rect = ImRect(m_StartPos, m_StartPos + m_CurrentSize);
@@ -26,11 +27,9 @@ bool ImGuiEx::Canvas::Begin(Canvas* parent, const ImVec2& size)
     m_DrawList->AddRectFilled(m_StartPos, m_StartPos + m_CurrentSize, IM_COL32(0, 0, 0, 64));
     m_DrawList->AddRect(bounding_rect.Min, bounding_rect.Max, IM_COL32(255, 0, 255, 64));
 
-
-    m_View.Scale    = 1.2f;
-    m_View.InvScale = 1.0f / m_View.Scale;
-
     ImGui::SetCursorScreenPos(ImVec2(0.0f, 0.0f));
+
+    SaveInputState();
 
     EnterLocalSpace();
 
@@ -43,12 +42,44 @@ void ImGuiEx::Canvas::End()
 
     LeaveLocalSpace();
 
+    RestoreInputState();
+
     // Emit dummy widget matching bounds of the canvas.
     ImGui::SetCursorScreenPos(m_StartPos);
     ImGui::Dummy(m_CurrentSize);
 
     // #debug: Rect around canvas. Content should be inside these bounds.
-    m_DrawList->AddRect(m_StartPos - ImVec2(1.0f, 1.0f), m_StartPos + m_CurrentSize + ImVec2(1.0f, 1.0f), IM_COL32(196, 196, 196, 255));
+    m_DrawList->AddRect(m_StartPos - ImVec2(1.0f, 1.0f), m_StartPos + m_CurrentSize + ImVec2(1.0f, 1.0f), IM_COL32(196, 0, 0, 255));
+}
+
+void ImGuiEx::Canvas::SetView(const ImVec2& origin, float scale)
+{
+    LeaveLocalSpace();
+
+    m_View.Origin        = origin;
+    m_View.RoundedOrigin = ImFloor(origin);
+    m_View.Scale         = scale;
+    m_View.InvScale      = scale ? 1.0f / scale : 0.0f;
+
+    EnterLocalSpace();
+}
+
+void ImGuiEx::Canvas::SaveInputState()
+{
+    auto& io = ImGui::GetIO();
+    m_MousePosBackup     = io.MousePos;
+    m_MousePosPrevBackup = io.MousePosPrev;
+    for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
+        m_MouseClickedPosBackup[i] = io.MouseClickedPos[i];
+}
+
+void ImGuiEx::Canvas::RestoreInputState()
+{
+    auto& io = ImGui::GetIO();
+    io.MousePos     = m_MousePosBackup;
+    io.MousePosPrev = m_MousePosPrevBackup;
+    for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
+        io.MouseClickedPos[i] = m_MouseClickedPosBackup[i];
 }
 
 void ImGuiEx::Canvas::EnterLocalSpace()
@@ -77,40 +108,37 @@ void ImGuiEx::Canvas::EnterLocalSpace()
     clipped_clip_rect.y = (clipped_clip_rect.y - m_StartPos.y);
     clipped_clip_rect.z = (clipped_clip_rect.z - m_StartPos.x);
     clipped_clip_rect.w = (clipped_clip_rect.w - m_StartPos.y);
+    if (m_View.InvScale > 1.0f)
+    {
+        clipped_clip_rect.x *= m_View.InvScale;
+        clipped_clip_rect.y *= m_View.InvScale;
+        clipped_clip_rect.z *= m_View.InvScale;
+        clipped_clip_rect.w *= m_View.InvScale;
+    }
     ImGui::PushClipRect(ImVec2(clipped_clip_rect.x, clipped_clip_rect.y), ImVec2(clipped_clip_rect.z, clipped_clip_rect.w), false);
 
     m_DrawListStartVertexIndex = m_DrawList->_VtxCurrentIdx;
 
-    // Backup mouse positions.
-    auto& io = ImGui::GetIO();
-    m_MousePosBackup     = io.MousePos;
-    m_MousePosPrevBackup = io.MousePosPrev;
-    for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
-        m_MouseClickedPosBackup[i] = io.MouseClickedPos[i];
-
     // Transform mouse position to local space.
-    io.MousePos     = (io.MousePos - m_StartPos) * m_View.InvScale;
-    io.MousePosPrev = (io.MousePosPrev - m_StartPos) * m_View.InvScale;
+    auto& io = ImGui::GetIO();
+    io.MousePos     = (m_MousePosBackup     - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
+    io.MousePosPrev = (m_MousePosPrevBackup - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
     for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
-        io.MouseClickedPos[i] = (io.MouseClickedPos[i] - m_StartPos) * m_View.InvScale;
+        io.MouseClickedPos[i] = (m_MouseClickedPosBackup[i] - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
+
+    m_ViewRect.Min = ImVec2(0.0f, 0.0f) - m_View.RoundedOrigin;
+    m_ViewRect.Max = (m_CurrentSize - m_View.RoundedOrigin) * m_View.InvScale;
 }
 
 void ImGuiEx::Canvas::LeaveLocalSpace()
 {
-    // Restore mouse position
-    auto& io = ImGui::GetIO();
-    io.MousePos = m_MousePosBackup;
-    io.MousePosPrev = m_MousePosPrevBackup;
-    for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
-        io.MouseClickedPos[i] = m_MouseClickedPosBackup[i];
-
     // Move vertices to screen space.
     auto vertex    = m_DrawList->VtxBuffer.Data + m_DrawListStartVertexIndex;
     auto vertexEnd = m_DrawList->VtxBuffer.Data + m_DrawList->_VtxCurrentIdx;
     while (vertex < vertexEnd)
     {
-        vertex->pos.x = vertex->pos.x * m_View.Scale + m_StartPos.x;
-        vertex->pos.y = vertex->pos.y * m_View.Scale + m_StartPos.y;
+        vertex->pos.x = vertex->pos.x * m_View.Scale + m_StartPos.x + m_View.RoundedOrigin.x;
+        vertex->pos.y = vertex->pos.y * m_View.Scale + m_StartPos.y + m_View.RoundedOrigin.y;
         ++vertex;
     }
 
@@ -118,10 +146,10 @@ void ImGuiEx::Canvas::LeaveLocalSpace()
     for (int i = m_DrawListCommadBufferSize; i < m_DrawList->CmdBuffer.size(); ++i)
     {
         auto& command = m_DrawList->CmdBuffer[i];
-        command.ClipRect.x += m_StartPos.x;
-        command.ClipRect.y += m_StartPos.y;
-        command.ClipRect.z += m_StartPos.x;
-        command.ClipRect.w += m_StartPos.y;
+        command.ClipRect.x += m_StartPos.x;// + m_View.Position.x;
+        command.ClipRect.y += m_StartPos.y;// + m_View.Position.y;
+        command.ClipRect.z += m_StartPos.x;// + m_View.Position.x;
+        command.ClipRect.w += m_StartPos.y;// + m_View.Position.y;
     }
 
     // And pop \o/

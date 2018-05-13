@@ -311,7 +311,7 @@ static void DrawNodeFrame(const ImVec2& a, const ImVec2& b, float headerHeight, 
     auto top = drawList->_Path.Size;
     drawList->PathLineTo(ImVec2(a.x, a.y + headerHeight) + drawList->_HalfPixel);
     drawList->PathLineTo(ImVec2(b.x - thickness * 0.5f, a.y + headerHeight) + drawList->_HalfPixel);
-    drawList->AddPolyline(drawList->_Path.Data + top, 2, ImColor(lineColor), false, 1.0f);
+    drawList->AddPolyline(drawList->_Path.Data + top, 2, ImColor(lineColor), false, 1.0f / drawList->_InvTransformationScale);
     drawList->_Path.pop_back();
     drawList->_Path.pop_back();
 
@@ -350,7 +350,9 @@ struct BlueprintNodeSample: Sample
         //    IM_COL32(255, 255, 128, 255)
         //);
 
-        ImGui::SetCursorScreenPos(ImVec2(300, 300));
+        ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() + ImVec2(10.0f, 10.0f));
+
+        //ImGui::GetWindowDrawList()->ApplyTransformation(ImMatrix::Scaling(4.0f, 4.0f));
 
         drawList->ChannelsSplit(2);
         drawList->ChannelsSetCurrent(1);
@@ -370,7 +372,6 @@ struct BlueprintNodeSample: Sample
                 //ImGui::Spring(0.0);
             ImGui::EndHorizontal();
             ImGui::Spring(0, 0.0f);
-            //ImGui::Spring(0, ImGui::GetStyle().ItemSpacing.y * 0.5f);
 
             auto nodeHeaderBottom = ImGui::GetCursorScreenPos().y;
 
@@ -411,7 +412,6 @@ struct BlueprintNodeSample: Sample
 
             ImGui::EndHorizontal();
         ImGui::EndVertical();
-        //DrawItemRect(borderColor, 0);
 
         drawList->ChannelsSetCurrent(0);
 
@@ -420,7 +420,7 @@ struct BlueprintNodeSample: Sample
         auto overColor     = ImColor(  0, 150, 245, 255);
 
         ImGui::SetCursorScreenPos(ImGui::GetItemRectMin());
-        ImGui::InvisibleButton("xxx", ImGui::GetItemRectSize());
+        ImGui::InvisibleButton("dummyButton", ImGui::GetItemRectSize());
 
         auto color = ImGui::IsItemHovered() ? overColor : normalColor;
         if (ImGui::IsItemActive())
@@ -436,6 +436,8 @@ struct BlueprintNodeSample: Sample
             2.0f);
 
         drawList->ChannelsMerge();
+
+        //ImGui::GetWindowDrawList()->PopTransformation();
     }
 };
 

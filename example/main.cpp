@@ -120,8 +120,8 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     }
 
     // Show the window
-    //ShowWindow(hwnd, SW_SHOWDEFAULT);
-    ShowWindow(hwnd, SW_SHOWMAXIMIZED);
+    ShowWindow(hwnd, SW_SHOWDEFAULT);
+    //ShowWindow(hwnd, SW_SHOWMAXIMIZED);
     UpdateWindow(hwnd);
 
     // Setup ImGui binding
@@ -248,6 +248,23 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         ImGui::PopStyleVar();
         if (showWindows)
         {
+            //auto drawList = ImGui::GetWindowDrawList();
+            //drawList->PushClipRectFullScreen();
+            //drawList->AddRectFilled(ImVec2(0.0f, 0.0f), io.DisplaySize, IM_COL32(0, 255, 0, 128));
+            //drawList->PopClipRect();
+
+            //drawList->AddRectFilled(ImVec2(0.0f, 0.0f), ImGui::GetIO().DisplaySize, IM_COL32(255, 0, 0, 255));
+
+            //drawList->AddRectFilled(
+            //    ImGui::GetCursorScreenPos(),
+            //    ImGui::GetWindowContentRegionMax(),
+            //    IM_COL32(0, 0, 128, 255));
+
+            //drawList->AddRectFilled(
+            //    ImGui::GetCursorScreenPos(),
+            //    ImGui::GetContentRegionAvail(),
+            //    IM_COL32(0, 128, 128, 255));
+
             ImGui::AlignTextToFramePadding();
             ImGui::Text("Sample:");
             ImGui::SameLine();
@@ -259,6 +276,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
                     auto isCurrentSample = sample.get() == currentSample;
                     if (ImGui::Selectable(sample->Name(), isCurrentSample))
                         setCurrentSample(sample.get());
+                    if (isCurrentSample)
                     if (isCurrentSample)
                         ImGui::SetItemDefaultFocus();
                 }
