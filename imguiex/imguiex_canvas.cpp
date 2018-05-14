@@ -1,4 +1,5 @@
-﻿# include "imguiex_internal.h"
+﻿# define IMGUI_DEFINE_MATH_OPERATORS
+# include "imguiex_internal.h"
 
 ImGuiEx::Canvas::Canvas(ImGuiID id)
     : m_ID(id)
@@ -7,7 +8,7 @@ ImGuiEx::Canvas::Canvas(ImGuiID id)
 
 bool ImGuiEx::Canvas::Begin(Canvas* parent, const ImVec2& size)
 {
-    auto& io = ImGui::GetIO();
+    //auto& io = ImGui::GetIO();
 
     m_Parent = parent;
 
@@ -18,14 +19,12 @@ bool ImGuiEx::Canvas::Begin(Canvas* parent, const ImVec2& size)
     m_DrawList    = ImGui::GetWindowDrawList();
 
     auto bounding_rect = ImRect(m_StartPos, m_StartPos + m_CurrentSize);
-    //if (parent)
-    //    bounding_rect = m_View.LocalToWorld() * bounding_rect;
-    if (ImGui::IsClippedEx(bounding_rect, m_ID, true))
+    if (ImGui::IsClippedEx(bounding_rect, m_ID, false))
         return false;
 
     // #debug: Canvas content.
-    m_DrawList->AddRectFilled(m_StartPos, m_StartPos + m_CurrentSize, IM_COL32(0, 0, 0, 64));
-    m_DrawList->AddRect(bounding_rect.Min, bounding_rect.Max, IM_COL32(255, 0, 255, 64));
+    //m_DrawList->AddRectFilled(m_StartPos, m_StartPos + m_CurrentSize, IM_COL32(0, 0, 0, 64));
+    //m_DrawList->AddRect(bounding_rect.Min, bounding_rect.Max, IM_COL32(255, 0, 255, 64));
 
     ImGui::SetCursorScreenPos(ImVec2(0.0f, 0.0f));
 
@@ -38,7 +37,10 @@ bool ImGuiEx::Canvas::Begin(Canvas* parent, const ImVec2& size)
 
 void ImGuiEx::Canvas::End()
 {
-    auto& io = ImGui::GetIO();
+    //auto& io = ImGui::GetIO();
+
+    // Check: Unmatched calls to Suspend() / Resume(). Please check your code.
+    IM_ASSERT(m_SuspendCounter == 0);
 
     LeaveLocalSpace();
 
@@ -49,7 +51,7 @@ void ImGuiEx::Canvas::End()
     ImGui::Dummy(m_CurrentSize);
 
     // #debug: Rect around canvas. Content should be inside these bounds.
-    m_DrawList->AddRect(m_StartPos - ImVec2(1.0f, 1.0f), m_StartPos + m_CurrentSize + ImVec2(1.0f, 1.0f), IM_COL32(196, 0, 0, 255));
+    //m_DrawList->AddRect(m_StartPos - ImVec2(1.0f, 1.0f), m_StartPos + m_CurrentSize + ImVec2(1.0f, 1.0f), IM_COL32(196, 0, 0, 255));
 }
 
 void ImGuiEx::Canvas::SetView(const ImVec2& origin, float scale)
@@ -62,6 +64,48 @@ void ImGuiEx::Canvas::SetView(const ImVec2& origin, float scale)
     m_View.InvScale      = scale ? 1.0f / scale : 0.0f;
 
     EnterLocalSpace();
+}
+
+void ImGuiEx::Canvas::Suspend()
+{
+    if (m_SuspendCounter == 0)
+        LeaveLocalSpace();
+
+    ++m_SuspendCounter;
+}
+
+void ImGuiEx::Canvas::Resume()
+{
+    // Check: Number of calls to Resume() do not match calls to Suspend(). Please check your code.
+    IM_ASSERT(m_SuspendCounter > 0);
+    if (--m_SuspendCounter == 0)
+        EnterLocalSpace();
+}
+
+ImVec2 ImGuiEx::Canvas::ToParent(const ImVec2& point) const
+{
+    return point * m_View.Scale + m_StartPos + m_View.RoundedOrigin;
+}
+
+ImVec2 ImGuiEx::Canvas::FromParent(const ImVec2& point) const
+{
+    return (point - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
+}
+
+ImVec2 ImGuiEx::Canvas::ToWorld(const ImVec2& point) const
+{
+    if (m_Parent)
+        return m_Parent->ToWorld(ToParent(point));
+    else
+        return ToParent(point);
+}
+
+ImVec2 ImGuiEx::Canvas::FromWorld(const ImVec2& point) const
+{
+    if (m_Parent)
+        return FromParent(m_Parent->FromWorld(point));
+    else
+        return FromParent(point);
 }
 
 void ImGuiEx::Canvas::SaveInputState()
@@ -104,19 +148,11 @@ void ImGuiEx::Canvas::EnterLocalSpace()
     ImGui::PushClipRect(m_StartPos, m_StartPos + m_CurrentSize, true);
     auto clipped_clip_rect = m_DrawList->_ClipRectStack.back();
     ImGui::PopClipRect();
-    clipped_clip_rect.x = (clipped_clip_rect.x - m_StartPos.x) - m_View.RoundedOrigin.x;
-    clipped_clip_rect.y = (clipped_clip_rect.y - m_StartPos.y) - m_View.RoundedOrigin.y;
-    clipped_clip_rect.z = (clipped_clip_rect.z - m_StartPos.x) - m_View.RoundedOrigin.x;
-    clipped_clip_rect.w = (clipped_clip_rect.w - m_StartPos.y) - m_View.RoundedOrigin.y;
-    //if (m_View.InvScale > 1.0f)
-    {
-        clipped_clip_rect.x *= m_View.InvScale;
-        clipped_clip_rect.y *= m_View.InvScale;
-        clipped_clip_rect.z *= m_View.InvScale;
-        clipped_clip_rect.w *= m_View.InvScale;
-    }
+    clipped_clip_rect.x = ((clipped_clip_rect.x - m_StartPos.x) - m_View.RoundedOrigin.x) * m_View.InvScale;
+    clipped_clip_rect.y = ((clipped_clip_rect.y - m_StartPos.y) - m_View.RoundedOrigin.y) * m_View.InvScale;
+    clipped_clip_rect.z = ((clipped_clip_rect.z - m_StartPos.x) - m_View.RoundedOrigin.x) * m_View.InvScale;
+    clipped_clip_rect.w = ((clipped_clip_rect.w - m_StartPos.y) - m_View.RoundedOrigin.y) * m_View.InvScale;
     ImGui::PushClipRect(ImVec2(clipped_clip_rect.x, clipped_clip_rect.y), ImVec2(clipped_clip_rect.z, clipped_clip_rect.w), false);
-    //ImGui::PushClipRect(ImVec2(0.0f, 0.0f), ImGui::GetIO().DisplaySize, false);
 
     m_DrawListStartVertexIndex = m_DrawList->_VtxCurrentIdx;
 

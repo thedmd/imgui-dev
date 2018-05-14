@@ -1,4 +1,5 @@
-﻿# include "imguiex_internal.h"
+﻿# define IMGUI_DEFINE_MATH_OPERATORS
+# include "imguiex_internal.h"
 
 ImGuiEx::Context* ImGuiEx::CreateContext()
 {
@@ -47,6 +48,8 @@ void ImGuiEx::EndCanvas()
 
     auto canvas = context->GetCurrentCanvas();
 
+    IM_ASSERT(canvas != nullptr);
+
     canvas->End();
 
     context->PopCanvas();
@@ -58,7 +61,75 @@ void ImGuiEx::CanvasView(const ImVec2& origin, float scale)
 
     auto canvas = context->GetCurrentCanvas();
 
+    IM_ASSERT(canvas != nullptr);
+
     canvas->SetView(origin, scale);
+}
+
+void ImGuiEx::SuspendCanvas()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    canvas->Suspend();
+}
+
+void ImGuiEx::ResumeCanvas()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    canvas->Resume();
+}
+
+ImVec2 ImGuiEx::CanvasToParent(const ImVec2& point)
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    return canvas->ToParent(point);
+}
+
+ImVec2 ImGuiEx::CanvasFromParent(const ImVec2& point)
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    return canvas->FromParent(point);
+}
+
+ImVec2 ImGuiEx::CanvasToWorld(const ImVec2& point)
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    return canvas->ToWorld(point);
+}
+
+ImVec2 ImGuiEx::CanvasFromWorld(const ImVec2& point)
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    return canvas->FromWorld(point);
 }
 
 ImVec2 ImGuiEx::CanvasContentMin()
@@ -66,6 +137,8 @@ ImVec2 ImGuiEx::CanvasContentMin()
     CurrentContextPtr context;
 
     auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
 
     return canvas->ContentRect().Min;
 }
@@ -76,6 +149,8 @@ ImVec2 ImGuiEx::CanvasContentMax()
 
     auto canvas = context->GetCurrentCanvas();
 
+    IM_ASSERT(canvas != nullptr);
+
     return canvas->ContentRect().Max;
 }
 
@@ -85,7 +160,31 @@ ImVec2 ImGuiEx::CanvasContentSize()
 
     auto canvas = context->GetCurrentCanvas();
 
+    IM_ASSERT(canvas != nullptr);
+
     return canvas->ContentRect().GetSize();
+}
+
+ImVec2 ImGuiEx::CanvasViewOrigin()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    return canvas->ViewOrigin();
+}
+
+float ImGuiEx::CanvasViewScale()
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    return canvas->ViewScale();
 }
 
 ImVec2 ImGuiEx::CanvasViewMin()
@@ -93,6 +192,8 @@ ImVec2 ImGuiEx::CanvasViewMin()
     CurrentContextPtr context;
 
     auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
 
     return canvas->ViewRect().Min;
 }
@@ -103,6 +204,8 @@ ImVec2 ImGuiEx::CanvasViewMax()
 
     auto canvas = context->GetCurrentCanvas();
 
+    IM_ASSERT(canvas != nullptr);
+
     return canvas->ViewRect().Max;
 }
 
@@ -111,6 +214,8 @@ ImVec2 ImGuiEx::CanvasViewSize()
     CurrentContextPtr context;
 
     auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
 
     return canvas->ViewRect().GetSize();
 }

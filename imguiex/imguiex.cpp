@@ -1,4 +1,5 @@
-﻿# include "imguiex_internal.h"
+﻿# define IMGUI_DEFINE_MATH_OPERATORS
+# include "imguiex_internal.h"
 
 static ImGuiEx::Context* g_Context = nullptr;
 

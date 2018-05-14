@@ -1,11 +1,6 @@
 ﻿# pragma once
 # include "imguiex.h"
-# pragma push_macro("IMGUI_DEFINE_MATH_OPERATORS")
-# if !defined(IMGUI_DEFINE_MATH_OPERATORS)
-#     define IMGUI_DEFINE_MATH_OPERATORS
-# endif
 # include "imgui_internal.h"
-# pragma pop_macro("IMGUI_DEFINE_MATH_OPERATORS")
 
 namespace ImGuiEx {
 
@@ -13,6 +8,7 @@ namespace ImGuiEx {
 
 static inline ImVec2 ImSelectPositive(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x > 0.0f ? lhs.x : rhs.x, lhs.y > 0.0f ? lhs.y : rhs.y); }
 
+# if defined(IMGUI_DEFINE_MATH_OPERATORS)
 static inline ImVec2   operator*(const float lhs, const ImVec2& rhs)              { return ImVec2(lhs*rhs.x, lhs*rhs.y); }
 static inline ImVec2   operator-(const ImVec2& lhs)                               { return ImVec2(-lhs.x, -lhs.y); }
 static inline ImVec2   operator*(const ImMatrix& lhs, const ImVec2& rhs)          { return lhs.Transformed(rhs); }
@@ -37,6 +33,7 @@ static inline ImRect   operator*(const ImMatrix& lhs, const ImRect& rhs)
 
     return out;
 }
+# endif
 
 struct Canvas;
 
@@ -94,9 +91,6 @@ struct Canvas
         ImVec2 RoundedOrigin = ImVec2(0.0f, 0.0f);
         float  Scale         = 1.0f;
         float  InvScale      = 1.0f;
-
-        ImMatrix LocalToWorld() const { return ImMatrix(Scale,    0.0f, 0.0f,    Scale,  RoundedOrigin.x,  RoundedOrigin.y); }
-        ImMatrix WorldToLocal() const { return ImMatrix(InvScale, 0.0f, 0.0f, InvScale, -RoundedOrigin.x, -RoundedOrigin.y); }
     };
 
     Canvas(ImGuiID id);
@@ -109,8 +103,20 @@ struct Canvas
 
     void SetView(const ImVec2& origin, float scale = 1.0f);
 
+    void Suspend();
+    void Resume();
+
+    ImVec2 ToParent(const ImVec2& point) const;
+    ImVec2 FromParent(const ImVec2& point) const;
+
+    ImVec2 ToWorld(const ImVec2& point) const;
+    ImVec2 FromWorld(const ImVec2& point) const;
+
     const ImRect& ContentRect() const { return m_ContentRect; }
     const ImRect& ViewRect()    const { return m_ViewRect; }
+    const ImVec2& ViewOrigin()  const { return m_View.Origin; }
+    float         ViewScale()   const { return m_View.Scale; }
+    bool          IsSuspended() const { return m_SuspendCounter > 0; }
 
 private:
     void SaveInputState();
@@ -133,6 +139,8 @@ private:
 
     View       m_View;
     ImRect     m_ViewRect;
+
+    int m_SuspendCounter = 0;
 
     ImVec2 m_MousePosBackup;
     ImVec2 m_MousePosPrevBackup;
