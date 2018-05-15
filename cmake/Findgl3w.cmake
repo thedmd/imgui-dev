@@ -1,13 +1,13 @@
 set(_gl3w_SourceDir ${CMAKE_SOURCE_DIR}/imgui/examples/libs/gl3w)
 
-if (NOT TARGET imgui)
-    add_library(imgui STATIC
+if (NOT TARGET gl3w)
+    add_library(gl3w STATIC
         ${_gl3w_SourceDir}/GL/gl3w.h
         ${_gl3w_SourceDir}/GL/glcorearb.h
         ${_gl3w_SourceDir}/GL/gl3w.c
     )
-    target_include_directories(imgui PUBLIC
-        ${_gl3w_SourceDir}/imgui
+    target_include_directories(gl3w PUBLIC
+        ${_gl3w_SourceDir}
     )
 endif()
 
