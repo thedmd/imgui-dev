@@ -6,6 +6,7 @@ set(_sources
     samples/layouts-blueprint-node.cpp
     samples/drawlist-transformation.cpp
     samples/imguiex-canvas.cpp
+    samples/node-editor.cpp
 
     support/picojson.h
     support/property.h
@@ -28,6 +29,7 @@ set(_sources_dx11
 
 find_package(imgui REQUIRED)
 find_package(imguiex REQUIRED)
+find_package(NodeEditor REQUIRED)
 
 if (WIN32)
     add_executable(${PROJECT_NAME}
@@ -79,4 +81,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE
     imgui
     imguiex
+    NodeEditor
 )
