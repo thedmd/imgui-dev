@@ -70,6 +70,9 @@
     <ClInclude Include="support\settings.h">
       <Filter>support</Filter>
     </ClInclude>
+    <ClInclude Include="..\imguiex\imguiex_canvas.h">
+      <Filter>imguiex</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">

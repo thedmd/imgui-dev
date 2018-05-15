@@ -1,5 +1,6 @@
 ﻿# define IMGUI_DEFINE_MATH_OPERATORS
 # include "imguiex_internal.h"
+# include "imguiex_canvas.h"
 
 ImGuiEx::Canvas::Canvas(ImGuiID id)
     : m_ID(id)

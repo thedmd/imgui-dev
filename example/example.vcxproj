@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\imguiex\imguiex.h" />
+    <ClInclude Include="..\imguiex\imguiex_canvas.h" />
     <ClInclude Include="..\imguiex\imguiex_internal.h" />
     <ClInclude Include="..\imgui\imconfig.h" />
     <ClInclude Include="..\imgui\imgui.h" />
