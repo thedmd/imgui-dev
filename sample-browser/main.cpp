@@ -7,6 +7,7 @@
 #include "imgui_impl_dx11.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
+struct IUnknown; // needed if compiled with /permissive-
 #include <d3d11.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
@@ -292,7 +293,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         }
 
         ///*
-# if defined(IMGUI_EXPERIMENTAL) || 1
+# if defined(IMGUI_EXPERIMENTAL)
 
         auto borderColor = ImColor(255, 255, 255, 64);
 
