@@ -115,6 +115,9 @@ void ImGuiEx::Canvas::SaveInputState()
     m_MousePosPrevBackup = io.MousePosPrev;
     for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
         m_MouseClickedPosBackup[i] = io.MouseClickedPos[i];
+
+    // Record cursor max to prevent scrollbars from appearing.
+    m_WindowCursorMaxBackup = ImGui::GetCurrentWindow()->DC.CursorMaxPos;
 }
 
 void ImGuiEx::Canvas::RestoreInputState()
@@ -124,6 +127,7 @@ void ImGuiEx::Canvas::RestoreInputState()
     io.MousePosPrev = m_MousePosPrevBackup;
     for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
         io.MouseClickedPos[i] = m_MouseClickedPosBackup[i];
+    ImGui::GetCurrentWindow()->DC.CursorMaxPos = m_WindowCursorMaxBackup;
 }
 
 void ImGuiEx::Canvas::EnterLocalSpace()

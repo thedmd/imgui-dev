@@ -145,6 +145,7 @@ private:
     ImVec2 m_MousePosBackup;
     ImVec2 m_MousePosPrevBackup;
     ImVec2 m_MouseClickedPosBackup[IM_SIZE_OF_ARRAY(ImGuiIO::MouseClickedPos)];
+    ImVec2 m_WindowCursorMaxBackup;
 };
 
 } // namespace ImGuiExtras
