@@ -7,7 +7,7 @@ struct TransformationSample: Sample
 
     virtual const char* Name() const override
     {
-        return "Transformation";
+        return "ImDrawList Transformation";
     }
 
     virtual void Frame() override

@@ -2,10 +2,10 @@ project(sample-browser)
 
 set(_sources
     samples/samples.h
-    samples/layouts.cpp
-    samples/canvas.cpp
-    samples/transformation.cpp
-    samples/blueprint-node.cpp
+    samples/layouts-basic.cpp
+    samples/layouts-blueprint-node.cpp
+    samples/drawlist-transformation.cpp
+    samples/imguiex-canvas.cpp
 
     support/picojson.h
     support/property.h

@@ -26,10 +26,10 @@ protected:
     ax::Settings& m_Settings;
 };
 
-std::unique_ptr<Sample> CreateLayoutsSample(ax::Settings& settings);
-std::unique_ptr<Sample> CreateCanvasSample(ax::Settings& settings);
-std::unique_ptr<Sample> CreateTransformationSample(ax::Settings& m_Settings);
+std::unique_ptr<Sample> CreateBasicLayoutsSample(ax::Settings& m_Settings);
 std::unique_ptr<Sample> CreateBlueprintNodeSample(ax::Settings& m_Settings);
+std::unique_ptr<Sample> CreateTransformationSample(ax::Settings& m_Settings);
+std::unique_ptr<Sample> CreateCanvasSample(ax::Settings& settings);
 
 inline std::vector<std::unique_ptr<Sample>> CreateSamples(ax::Settings& settings)
 {
@@ -37,10 +37,10 @@ inline std::vector<std::unique_ptr<Sample>> CreateSamples(ax::Settings& settings
 
     static Factory factories[] =
     {
-        &CreateLayoutsSample,
-        &CreateCanvasSample,
+        &CreateBasicLayoutsSample,
+        &CreateBlueprintNodeSample,
         &CreateTransformationSample,
-        &CreateBlueprintNodeSample
+        &CreateCanvasSample,
     };
 
     std::vector<std::unique_ptr<Sample>> result;

@@ -7,7 +7,7 @@ struct CanvasSample: Sample
 
     virtual const char* Name() const override
     {
-        return "Canvas";
+        return "ImGuiEx - Infinite Canvas";
     }
 
     virtual void Initialize() override

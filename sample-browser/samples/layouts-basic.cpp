@@ -157,13 +157,13 @@ static void DrawAllSprings()
     }
 }
 
-struct LayoutSample: Sample
+struct BasicLayoutsSample: Sample
 {
     using Sample::Sample;
 
     virtual const char* Name() const override
     {
-        return "Layouts";
+        return "Layouts - Basics";
     }
 
     virtual void Frame() override
@@ -754,7 +754,7 @@ private:
     int sleep = 0;
 };
 
-std::unique_ptr<Sample> CreateLayoutsSample(ax::Settings& m_Settings)
+std::unique_ptr<Sample> CreateBasicLayoutsSample(ax::Settings& m_Settings)
 {
-    return std::make_unique<LayoutSample>(m_Settings);
+    return std::make_unique<BasicLayoutsSample>(m_Settings);
 }

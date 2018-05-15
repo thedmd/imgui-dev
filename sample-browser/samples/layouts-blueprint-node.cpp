@@ -324,7 +324,7 @@ struct BlueprintNodeSample: Sample
 
     virtual const char* Name() const override
     {
-        return "Blueprint Node";
+        return "Layouts - Blueprint Node";
     }
 
     virtual void Frame() override
