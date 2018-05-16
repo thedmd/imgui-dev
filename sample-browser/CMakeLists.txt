@@ -27,6 +27,9 @@ set(_sources_dx11
     main.cpp
 )
 
+source_group("" FILES ${_sources} ${_sources_glfw} ${_sources_dx11})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${_sources} ${_sources_dx11})
+
 find_package(imgui REQUIRED)
 find_package(imguiex REQUIRED)
 find_package(NodeEditor REQUIRED)

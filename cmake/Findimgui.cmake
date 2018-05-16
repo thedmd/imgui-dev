@@ -1,7 +1,7 @@
 set(_imgui_SourceDir ${CMAKE_SOURCE_DIR}/imgui)
 
 if (NOT TARGET imgui)
-    add_library(imgui STATIC
+    set(_imgui_Sources
         ${_imgui_SourceDir}/imgui.h
         ${_imgui_SourceDir}/imconfig.h
         ${_imgui_SourceDir}/imgui_internal.h
@@ -9,9 +9,17 @@ if (NOT TARGET imgui)
         ${_imgui_SourceDir}/imgui_draw.cpp
         ${_imgui_SourceDir}/imgui_demo.cpp
     )
+
+    source_group("" FILES ${_imgui_Sources})
+    source_group(TREE ${_imgui_SourceDir} FILES ${_imgui_Sources})
+
+    add_library(imgui STATIC
+        ${_imgui_Sources}
+    )
     target_include_directories(imgui PUBLIC
         ${_imgui_SourceDir}
     )
+    unset(_imgui_Sources)
 endif()
 
 include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)

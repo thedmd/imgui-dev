@@ -32,6 +32,7 @@ ax::NodeEditor::NodeBuilder::~NodeBuilder()
 ax::NodeEditor::Editor::Editor(const char* str_id)
     : m_Id(ImHash(str_id, 0))
     , m_Canvas(m_Id)
+    , m_NavigateAction(*this)
 {
 }
 
@@ -51,6 +52,8 @@ bool ax::NodeEditor::Editor::Begin(const ImVec2& size)
 
 void ax::NodeEditor::Editor::End()
 {
+    ProcessActions();
+
     m_Canvas.End();
 
     m_Pins.Discard();
@@ -62,6 +65,43 @@ void ax::NodeEditor::Editor::End()
         m_Canvas.ContentRect().Min - ImVec2(1, 1),
         m_Canvas.ContentRect().Max + ImVec2(1, 1),
         IM_COL32(255, 255, 255, 255));
+}
+
+void ax::NodeEditor::Editor::ProcessActions()
+{
+    if (m_CurrentAction && !m_CurrentAction->Process())
+        m_CurrentAction = nullptr;
+
+    if (nullptr != m_CurrentAction)
+        return;
+
+    Action* possibleAction = nullptr;
+    Action* nextAction = nullptr;
+
+    for (auto& action : m_Actions)
+    {
+        auto response = action->Accept();
+        if (response == Action::Accepted)
+        {;
+            nextAction = action;
+            break;
+        }
+        else if (response == Action::Possible)
+        {
+            if (!possibleAction)
+                possibleAction = action;
+            else
+                action->Dismiss();
+        }
+    }
+
+    if (nextAction)
+    {
+        m_CurrentAction = nextAction;
+
+        if (possibleAction)
+            possibleAction->Dismiss();
+    }
 }
 
 ax::NodeEditor::NodeBuilder ax::NodeEditor::Editor::BuildNode(NodeId id)

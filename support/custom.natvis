@@ -111,8 +111,34 @@
     </Expand>
   </Type>
 
-    <Type Name="ax::Editor::Detail::Object">
-        <DisplayString>{{ ID={ID} Live={IsLive} }}</DisplayString>
+    <Type Name="ax::SafeType&lt;*,*&gt;">
+        <DisplayString>{m_Value}</DisplayString>
     </Type>
 
+    <Type Name="ax::Editor::Detail::Object">
+        <DisplayString>{{ Id={ID} Live={IsLive} }}</DisplayString>
+    </Type>
+
+    <Type Name="ax::NodeEditor::Object&lt;*&gt;">
+        <DisplayString>{{ Id: {m_Id} IsLive: {m_IsLive} }}</DisplayString>
+        <Expand HideRawView="false">
+            <Item Name="Id">m_Id</Item>
+            <Item Name="IsLive">m_IsLive</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ax::NodeEditor::Node">
+        <DisplayString>{{ Id: {m_Id} IsLive: {m_IsLive} }}</DisplayString>
+        <Expand HideRawView="false">
+            <ExpandedItem ExcludeView="self">(ax::NodeEditor::Object&lt;ax::NodeEditor::NodeId&gt;*)this</ExpandedItem>
+            <Item Name="Bounds">m_Bounds</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="ax::NodeEditor::ObjectCollection&lt;*&gt;">
+        <DisplayString>{m_Objects}</DisplayString>
+        <Expand HideRawView="true">
+            <ExpandedItem>m_Objects,na</ExpandedItem>
+        </Expand>
+    </Type>
 </AutoVisualizer>

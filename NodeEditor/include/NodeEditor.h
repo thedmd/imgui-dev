@@ -2,6 +2,7 @@
 # include "ax/SafePointerType.h"
 # include "imgui.h"
 # include "imguiex_canvas.h"
+# include "Actions.h"
 
 namespace ax {
 namespace NodeEditor {
@@ -89,12 +90,21 @@ struct Editor
     NodeBuilder BuildNode(NodeId id);
 
 private:
+    void ProcessActions();
+
     ImGuiID         m_Id;
     ImGuiEx::Canvas m_Canvas;
 
     ObjectCollection<Pin>  m_Pins;
     ObjectCollection<Node> m_Nodes;
     ObjectCollection<Link> m_Links;
+
+    Action*         m_CurrentAction = nullptr;
+    NavigateAction  m_NavigateAction;
+    Action*         m_Actions[1]
+    {
+        &m_NavigateAction
+    };
 };
 
 
