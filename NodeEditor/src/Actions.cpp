@@ -9,12 +9,12 @@ ax::NodeEditor::Action::~Action()
 {
 }
 
-ax::NodeEditor::Action::AcceptResult ax::NodeEditor::NavigateAction::Accept()
+ax::NodeEditor::Action::Result ax::NodeEditor::NavigateAction::Accept(const InputState& inputState)
 {
-    return False;
+    return No;
 }
 
-bool ax::NodeEditor::NavigateAction::Process()
+bool ax::NodeEditor::NavigateAction::Process(const InputState& inputState)
 {
     return false;
 }

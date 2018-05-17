@@ -80,9 +80,13 @@ struct CanvasSample: Sample
         static auto statsContentSize = ImRect(0, 0, 0, 0);
         static auto statsViewSize = ImRect(0, 0, 0, 0);
         static auto statsWidgetCount = 0;
+        static auto statsOrigin = ImVec2(0.0f, 0.0f);
+        static auto statsScale = 1.0f;
         static auto statsInnerContentSize = ImRect(0, 0, 0, 0);
         static auto statsInnerViewSize = ImRect(0, 0, 0, 0);
         static auto statsInnerWidgetCount = 0;
+        static auto statsInnerOrigin = ImVec2(0.0f, 0.0f);
+        static auto statsInnerScale = 1.0f;
 
         ImGui::Columns(2);
         //ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x * 0.75f);
@@ -103,6 +107,8 @@ struct CanvasSample: Sample
             statsViewSize.Max.x, statsViewSize.Max.y,
             statsViewSize.GetWidth(), statsViewSize.GetHeight());
         ImGui::Text("    Widgets: %d", statsWidgetCount);
+        ImGui::Text("    Origin: { l: %.2f, t: %.2f }", statsOrigin.x, statsOrigin.y);
+        ImGui::Text("    Scale: %.2f", statsScale);
         ImGui::Text("Inner Canvas:");
         ImGui::Text("    Content Rect: { l: %.2f, t: %.2f, r: %.2f, b: %.2f, w: %.2f, h: %.2f }",
             statsInnerContentSize.Min.x, statsInnerContentSize.Min.y,
@@ -113,6 +119,8 @@ struct CanvasSample: Sample
             statsInnerViewSize.Max.x, statsInnerViewSize.Max.y,
             statsInnerViewSize.GetWidth(), statsInnerViewSize.GetHeight());
         ImGui::Text("    Widgets: %d", statsInnerWidgetCount);
+        ImGui::Text("    Origin: { l: %.2f, t: %.2f }", statsInnerOrigin.x, statsInnerOrigin.y);
+        ImGui::Text("    Scale: %.2f", statsInnerScale);
         ImGui::Columns();
 
         ImGui::Separator();
@@ -139,6 +147,8 @@ struct CanvasSample: Sample
             statsContentSize.Max = canvasContentMax;
 
             ImGuiEx::CanvasView(canvasContentSize * 0.5f + ImMul(canvasContentSize * 0.5f, ImVec2(configOriginX, configOriginY)), configScale);
+            statsOrigin = ImGuiEx::CanvasViewOrigin();
+            statsScale  = ImGuiEx::CanvasViewScale();
 
             auto canvasViewMin  = ImGuiEx::CanvasViewMin();
             auto canvasViewMax  = ImGuiEx::CanvasViewMax();
@@ -181,6 +191,8 @@ struct CanvasSample: Sample
                 if (ImGuiEx::BeginCanvas("Inner", ImVec2(180, 180)))
                 {
                     ImGuiEx::CanvasView(ImVec2(0.0f, 0.0f), 1.0f / configScale);
+                    statsInnerOrigin = ImGuiEx::CanvasViewOrigin();
+                    statsInnerScale  = ImGuiEx::CanvasViewScale();
 
                     statsInnerContentSize.Min = ImGuiEx::CanvasContentMin();
                     statsInnerContentSize.Max = ImGuiEx::CanvasContentMax();

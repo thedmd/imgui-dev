@@ -23,6 +23,9 @@ struct NodeEditorSample: Sample
         if (m_Editor.Begin())
         {
 
+            //m_Editor.NavigateTo(ImRect(0, 0, 100, 100));
+            m_Editor.NavigateTo(ImVec2(0, 0));
+
             {
                 auto builder = m_Editor.BuildNode(1);
                 ImGui::Text("I'm a node!");

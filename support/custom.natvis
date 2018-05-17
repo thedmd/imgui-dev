@@ -119,7 +119,7 @@
         <DisplayString>{{ Id={ID} Live={IsLive} }}</DisplayString>
     </Type>
 
-    <Type Name="ax::NodeEditor::Object&lt;*&gt;">
+    <Type Name="ax::NodeEditor::Object">
         <DisplayString>{{ Id: {m_Id} IsLive: {m_IsLive} }}</DisplayString>
         <Expand HideRawView="false">
             <Item Name="Id">m_Id</Item>
@@ -130,7 +130,7 @@
     <Type Name="ax::NodeEditor::Node">
         <DisplayString>{{ Id: {m_Id} IsLive: {m_IsLive} }}</DisplayString>
         <Expand HideRawView="false">
-            <ExpandedItem ExcludeView="self">(ax::NodeEditor::Object&lt;ax::NodeEditor::NodeId&gt;*)this</ExpandedItem>
+            <ExpandedItem ExcludeView="self">(ax::NodeEditor::Object*)this</ExpandedItem>
             <Item Name="Bounds">m_Bounds</Item>
         </Expand>
     </Type>
@@ -141,4 +141,19 @@
             <ExpandedItem>m_Objects,na</ExpandedItem>
         </Expand>
     </Type>
+
+
+    <Type Name="ax::NodeEditor::InputItem&lt;*&gt;">
+        <DisplayString Condition="Hovered"          IncludeView="hovered"> Hovered: {*Hovered,na}</DisplayString>
+        <DisplayString                              IncludeView="hovered"></DisplayString>
+        <DisplayString Condition="Active"           IncludeView="active"> Active: {*Active,na}</DisplayString>
+        <DisplayString                              IncludeView="active"></DisplayString>
+        <DisplayString Condition="Clicked"          IncludeView="clicked"> Clicked: {*Clicked,na}</DisplayString>
+        <DisplayString                              IncludeView="clicked"></DisplayString>
+        <DisplayString Condition="DoubleClicked"    IncludeView="doubleclicked"> Double Clicked: {*DoubleClicked,na}</DisplayString>
+        <DisplayString                              IncludeView="doubleclicked"></DisplayString>
+
+        <DisplayString>{{ {*this,view(hovered)}{*this,view(active)}{*this,view(clicked)}{*this,view(doubleclicked)} }}</DisplayString>
+    </Type>
+
 </AutoVisualizer>

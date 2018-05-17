@@ -5,17 +5,18 @@ namespace ax {
 namespace NodeEditor {
 
 struct Editor;
+struct InputState;
 
 struct Action
 {
-    enum AcceptResult { Rejected, Accepted, Possible };
+    enum Result { No, Yes, Possible };
 
     Action(Editor& editor);
 
     ~Action();
 
-    virtual AcceptResult Accept() = 0;
-    virtual bool Process() = 0;
+    virtual Result Accept(const InputState& inputState) = 0;
+    virtual bool Process(const InputState& inputState) = 0;
     virtual void Dismiss() {}
 
     virtual ImGuiMouseCursor Cursor() const { return ImGuiMouseCursor_Arrow; }
@@ -30,8 +31,8 @@ struct NavigateAction final
 {
     using Action::Action;
 
-    virtual AcceptResult Accept() override;
-    virtual bool Process() override;
+    virtual Result Accept(const InputState& inputState) override;
+    virtual bool Process(const InputState& inputState) override;
 };
 
 
