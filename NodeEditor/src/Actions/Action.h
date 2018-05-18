@@ -26,15 +26,5 @@ protected:
     Editor& m_Editor;
 };
 
-struct NavigateAction final
-    : Action
-{
-    using Action::Action;
-
-    virtual Result Accept(const InputState& inputState) override;
-    virtual bool Process(const InputState& inputState) override;
-};
-
-
 } // namespace NodeEditor
 } // namespace ax

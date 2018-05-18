@@ -6,12 +6,17 @@ inline ax::NodeEditor::Object::Object(ObjectId id)
 {
 }
 
+inline ax::NodeEditor::ObjectType ax::NodeEditor::Object::Type() const
+{
+    return m_Id.Type();
+}
+
 inline void ax::NodeEditor::Object::Touch()
 {
     m_IsLive = true;
 }
 
-inline void ax::NodeEditor::Object::Discard()
+inline void ax::NodeEditor::Object::Reset()
 {
     m_IsLive = false;
 }
@@ -67,8 +72,14 @@ inline T* ax::NodeEditor::ObjectCollection<T>::Get(ObjectId id)
 }
 
 template <typename T>
-inline void ax::NodeEditor::ObjectCollection<T>::Discard()
+int ax::NodeEditor::ObjectCollection<T>::Count() const
+{
+    return m_Objects.size();
+}
+
+template <typename T>
+inline void ax::NodeEditor::ObjectCollection<T>::Reset()
 {
     for (auto& object : m_Objects)
-        object->Discard();
+        object->Reset();
 }
