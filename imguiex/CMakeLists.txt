@@ -5,6 +5,7 @@ set(_sources
     imguiex_internal.h
     imguiex.cpp
     imguiex_api.cpp
+    imguiex_canvas.h
     imguiex_canvas.cpp
 )
 

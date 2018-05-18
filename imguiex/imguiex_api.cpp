@@ -67,6 +67,28 @@ void ImGuiEx::CanvasView(const ImVec2& origin, float scale)
     canvas->SetView(origin, scale);
 }
 
+void ImGuiEx::CenterCanvasView(const ImVec2& virtualPoint)
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    canvas->CenterView(virtualPoint);
+}
+
+void ImGuiEx::CenterCanvasView(const ImVec2& virtualMin, const ImVec2& virtualMax)
+{
+    CurrentContextPtr context;
+
+    auto canvas = context->GetCurrentCanvas();
+
+    IM_ASSERT(canvas != nullptr);
+
+    canvas->CenterView(ImRect(virtualMin, virtualMax));
+}
+
 void ImGuiEx::SuspendCanvas()
 {
     CurrentContextPtr context;

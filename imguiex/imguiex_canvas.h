@@ -21,7 +21,17 @@ struct Canvas
     bool Begin(Canvas* parent, const ImVec2& size = ImVec2(0, 0));
     void End();
 
-    void SetView(const ImVec2& origin, float scale = 1.0f);
+    // Sets viewport over canvas:
+    //   'worldOrigin' - position from top left widget corner where center
+    //                   of virtual coordinate system is placed
+    //   'scale'       - how much content of viewport is scaled
+    void SetView(const ImVec2& worldOrigin, float scale = 1.0f);
+
+    // Center current viewport over 'virtualPoint'.
+    void CenterView(const ImVec2& virtualPoint);
+
+    // Center viewport over 'virtualRect'.
+    void CenterView(const ImRect& virtualRect);
 
     void Suspend();
     void Resume();

@@ -55,16 +55,57 @@ void ImGuiEx::Canvas::End()
     //m_DrawList->AddRect(m_StartPos - ImVec2(1.0f, 1.0f), m_StartPos + m_CurrentSize + ImVec2(1.0f, 1.0f), IM_COL32(196, 0, 0, 255));
 }
 
-void ImGuiEx::Canvas::SetView(const ImVec2& origin, float scale)
+void ImGuiEx::Canvas::SetView(const ImVec2& worldOrigin, float scale)
 {
     LeaveLocalSpace();
 
-    m_View.Origin        = origin;
-    m_View.RoundedOrigin = ImFloor(origin);
+    m_View.Origin        = worldOrigin;
+    m_View.RoundedOrigin = ImFloor(worldOrigin);
     m_View.Scale         = scale;
     m_View.InvScale      = scale ? 1.0f / scale : 0.0f;
 
     EnterLocalSpace();
+}
+
+void ImGuiEx::Canvas::CenterView(const ImVec2& virtualPoint)
+{
+    auto newViewport = ViewRect();
+    newViewport.Translate(virtualPoint - newViewport.GetCenter());
+    CenterView(newViewport);
+}
+
+void ImGuiEx::Canvas::CenterView(const ImRect& virtualRect)
+{
+    auto worldCanvasOrigin = ToWorld(ImVec2(0, 0));
+    auto worldTargetRect = ImRect(
+        ToWorld(virtualRect.Min) - worldCanvasOrigin,
+        ToWorld(virtualRect.Max) - worldCanvasOrigin
+    );
+    auto worldTargetSize = worldTargetRect.GetSize();
+    auto      canvasSize = ContentRect().GetSize();
+
+    auto      canvasAspectRatio =      canvasSize.y > 0.0f ?      canvasSize.x /      canvasSize.y : 0.0f;
+    auto worldTargetAspectRatio = worldTargetSize.y > 0.0f ? worldTargetSize.x / worldTargetSize.y : 0.0f;
+
+    if (canvasAspectRatio <= 0.0f || worldTargetAspectRatio <= 0.0f)
+        return;
+
+    auto newOrigin = ViewOrigin();
+    auto newScale  = ViewScale();
+    if (worldTargetAspectRatio > canvasAspectRatio)
+    {
+        newOrigin    = ImVec2(0, 0) - worldTargetRect.Min;
+        newOrigin.y += (canvasSize.y - worldTargetSize.y) * 0.5f;
+        newScale     = canvasSize.x / virtualRect.GetWidth();
+    }
+    else
+    {
+        newOrigin    = ImVec2(0, 0) - worldTargetRect.Min;
+        newOrigin.x += (canvasSize.x - worldTargetSize.x) * 0.5f;
+        newScale     = canvasSize.y / virtualRect.GetHeight();
+    }
+
+    SetView(newOrigin, newScale);
 }
 
 void ImGuiEx::Canvas::Suspend()
