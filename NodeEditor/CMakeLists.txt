@@ -16,6 +16,7 @@ set(_sources
     src/Actions/NavigateAction.cpp
     src/Builders/NodeBuilder.h
     src/Builders/NodeBuilder.cpp
+    src/Utilities/BitmaskType.h
 )
 
 source_group("" FILES ${_sources})

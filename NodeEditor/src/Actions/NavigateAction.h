@@ -9,6 +9,8 @@ struct NavigateAction final
 {
     using Action::Action;
 
+    virtual const char* Name() const override { return "Navigate"; }
+
     virtual Result Accept(const InputState& inputState) override;
     virtual bool Process(const InputState& inputState) override;
 

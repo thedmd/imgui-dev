@@ -41,6 +41,7 @@ private:
     InputState m_InputState;
 
     Action*             m_CurrentAction = nullptr;
+    Action*             m_PossibleAction = nullptr;
     NavigateAction      m_NavigateAction;
     ImVector<Action*>   m_Actions;
 };

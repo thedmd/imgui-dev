@@ -5,6 +5,7 @@
 # include "imguiex_internal.h"
 # include "imguiex_canvas.h"
 # include "Actions.h"
+# include "Utilities/BitmaskType.h"
 
 namespace ax {
 namespace NodeEditor {
@@ -23,7 +24,7 @@ struct NodeBuilder;
 
 struct CanvasId final: SafePointerType<CanvasId> { using SafePointerType::SafePointerType; };
 
-enum class ObjectType
+enum class ObjectType : uint8_t
 {
     Pin,
     Node,
@@ -123,6 +124,16 @@ struct Canvas final : Object
     using Object::Object;
 };
 
+enum class KeyModifers : uint8_t
+{
+    None    = 0,
+    Ctrl    = 1,
+    Shift   = 2,
+    Alt     = 4,
+    Super   = 8
+};
+AX_BITMASK_TYPE(KeyModifers);
+
 template <typename T>
 struct InputItem
 {
@@ -139,6 +150,7 @@ struct InputState
     InputItem<Node*>   Node;
     InputItem<Link*>   Link;
     InputItem<Canvas*> Canvas;
+    KeyModifers        Modifiers = KeyModifers::None;
 };
 
 

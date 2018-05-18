@@ -9,13 +9,15 @@ struct InputState;
 
 struct Action
 {
-    enum Result { No, Yes, Possible };
-
     Action(Editor& editor);
 
     ~Action();
 
-    virtual Result Accept(const InputState& inputState) = 0;
+    virtual const char* Name() const = 0;
+
+    virtual bool CanAccept(const InputState& inputState) = 0;
+
+    virtual bool Accept(const InputState& inputState) = 0;
     virtual bool Process(const InputState& inputState) = 0;
     virtual void Dismiss() {}
 

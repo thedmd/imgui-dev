@@ -109,6 +109,29 @@ void ax::NodeEditor::Editor::Debug()
         overlayDrawList->AddRect(worldBounds.Min, worldBounds.Max, color);
     };
 
+    auto formatModifiers = [](KeyModifers modifiers)
+    {
+        ImGuiTextBuffer buffer;
+        buffer.reserve(128);
+
+        if (modifiers == KeyModifers::None)
+            buffer.appendf("None");
+        else
+        {
+            if (!!(modifiers & KeyModifers::Ctrl))  { buffer.appendf("Ctrl | ");  }
+            if (!!(modifiers & KeyModifers::Shift)) { buffer.appendf("Shift | "); }
+            if (!!(modifiers & KeyModifers::Alt))   { buffer.appendf("Alt | ");   }
+            if (!!(modifiers & KeyModifers::Super)) { buffer.appendf("Super | "); }
+
+            if (!buffer.empty())
+            {
+                buffer.Buf.resize(buffer.Buf.size() - 3);
+                buffer.Buf.push_back(0);
+            }
+        }
+
+        return buffer;
+    };
 
     if (ImGui::Begin("Debug##NodeEditorDebug", nullptr))
     {
@@ -118,9 +141,12 @@ void ax::NodeEditor::Editor::Debug()
         ImGui::TextUnformatted("Active: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Active);
         ImGui::TextUnformatted("Clicked: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Clicked);
         ImGui::TextUnformatted("Double Clicked: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.DoubleClicked);
+        ImGui::Text("Modifiers: %s", formatModifiers(m_InputState.Modifiers).c_str());
         ImGui::Unindent();
         ImGui::TextUnformatted("Stats");
         ImGui::Indent();
+        ImGui::Text("Current Action: %s", m_CurrentAction ? m_CurrentAction->Name() : "---");
+        ImGui::Text("Possible Action: %s", m_PossibleAction ? m_PossibleAction->Name() : "---");
         ImGui::Text("Pins: %d", m_Pins.Count());
         ImGui::Text("Nodes: %d", m_Nodes.Count());
         ImGui::Text("Links: %d", m_Links.Count());
@@ -207,6 +233,12 @@ ax::NodeEditor::InputState ax::NodeEditor::Editor::BuildInputState()
 
     widget(m_Canvas.ViewRect(), window->GetID(m_BackgroundCanvas.m_Id.AsPointer()), result.Canvas, &m_BackgroundCanvas);
 
+    auto& io = ImGui::GetIO();
+    if (io.KeyCtrl)  result.Modifiers |= KeyModifers::Ctrl;
+    if (io.KeyShift) result.Modifiers |= KeyModifers::Shift;
+    if (io.KeyAlt)   result.Modifiers |= KeyModifers::Alt;
+    if (io.KeySuper) result.Modifiers |= KeyModifers::Super;
+
     return result;
 }
 
@@ -243,6 +275,8 @@ void ax::NodeEditor::Editor::ProcessActions(const InputState& inputState)
 
     if (possibleAction)
         possibleAction->Dismiss();
+
+    m_PossibleAction = possibleAction;
 }
 
 void ax::NodeEditor::Editor::ResetLiveObjects()
