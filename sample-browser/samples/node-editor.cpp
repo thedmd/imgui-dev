@@ -1,5 +1,7 @@
 # include "samples.h"
 # include <NodeEditor.h>
+# include <NodeEditor_Internal.h>
+# include <Editor.h>
 
 struct NodeEditorSample: Sample
 {
@@ -24,7 +26,7 @@ struct NodeEditorSample: Sample
         {
 
             //m_Editor.NavigateTo(ImRect(0, 0, 100, 100));
-            m_Editor.NavigateTo(ImVec2(0, 0));
+            //m_Editor.NavigateTo(ImVec2(0, 0));
 
             {
                 auto builder = m_Editor.BuildNode(1);
@@ -35,6 +37,8 @@ struct NodeEditorSample: Sample
 
             m_Editor.End();
         }
+
+        m_Editor.Debug();
     }
 
     ax::NodeEditor::Editor m_Editor = ax::NodeEditor::Editor("editor");
