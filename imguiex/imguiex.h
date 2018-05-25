@@ -48,7 +48,7 @@ void     SetCurrentContext(Context* context);
 //     It is not valid to call canvas API outside of BeginCanvas() / EndCanvas() scope.
 bool BeginCanvas(const char* str_id, const ImVec2& size = ImVec2(0.0f, 0.0f));
 void EndCanvas(); // Call only when BeginCanvas() returned true
-void CanvasView(const ImVec2& origin, float scale = 1.0f);
+void CanvasSetView(const ImVec2& origin, float scale = 1.0f);
 void CenterCanvasView(const ImVec2& virtualPoint);
 void CenterCanvasView(const ImVec2& virtualMin, const ImVec2& virtualMax);
 void SuspendCanvas();

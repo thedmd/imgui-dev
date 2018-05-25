@@ -3,16 +3,27 @@
 
 namespace ImGuiEx {
 
+struct CanvasView
+{
+    ImVec2 Origin        = ImVec2(0.0f, 0.0f);
+    ImVec2 RoundedOrigin = ImVec2(0.0f, 0.0f);
+    float  Scale         = 1.0f;
+    float  InvScale      = 1.0f;
+
+    void Set(const ImVec2& origin, float scale)
+    {
+        Origin        = origin;
+        RoundedOrigin = ImFloor(origin);
+        Scale         = scale;
+        InvScale      = scale ? 1.0f / scale : 0.0f;
+    }
+
+    ImVec2   ToWorld(const ImVec2& point) const { return point * Scale + RoundedOrigin;      }
+    ImVec2 ToLocal(const ImVec2& point) const { return (point - RoundedOrigin) * InvScale; }
+};
+
 struct Canvas
 {
-    struct View
-    {
-        ImVec2 Origin        = ImVec2(0.0f, 0.0f);
-        ImVec2 RoundedOrigin = ImVec2(0.0f, 0.0f);
-        float  Scale         = 1.0f;
-        float  InvScale      = 1.0f;
-    };
-
     Canvas(ImGuiID id);
 
     ImGuiID GetID() const { return m_ID; }
@@ -26,6 +37,7 @@ struct Canvas
     //                   of virtual coordinate system is placed
     //   'scale'       - how much content of viewport is scaled
     void SetView(const ImVec2& worldOrigin, float scale = 1.0f);
+    void SetView(const CanvasView& view);
 
     // Center current viewport over 'virtualPoint'.
     void CenterView(const ImVec2& virtualPoint);
@@ -43,6 +55,7 @@ struct Canvas
     ImVec2 FromWorld(const ImVec2& point) const;
 
     const ImRect& ContentRect() const { return m_ContentRect; }
+    const CanvasView& View()    const { return m_View; }
     const ImRect& ViewRect()    const { return m_ViewRect; }
     const ImVec2& ViewOrigin()  const { return m_View.Origin; }
     float         ViewScale()   const { return m_View.Scale; }
@@ -67,14 +80,14 @@ private:
     int m_DrawListCommadBufferSize;
     int m_DrawListStartVertexIndex;
 
-    View       m_View;
+    CanvasView m_View;
     ImRect     m_ViewRect;
 
     int m_SuspendCounter = 0;
 
     ImVec2 m_MousePosBackup;
     ImVec2 m_MousePosPrevBackup;
-    ImVec2 m_MouseClickedPosBackup[IM_SIZE_OF_ARRAY(ImGuiIO::MouseClickedPos)];
+    ImVec2 m_MouseClickedPosBackup[IM_ARRAYSIZE(ImGuiIO::MouseClickedPos)];
     ImVec2 m_WindowCursorMaxBackup;
 };
 

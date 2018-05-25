@@ -154,6 +154,10 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         return nullptr;
     };
 
+    auto beginWindow = []()
+    {
+    };
+
     auto setCurrentSample = [&configCurrentSample, &currentSample](Sample* sample)
     {
         if (currentSample)
@@ -171,10 +175,11 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         }
     };
 
+    Sample* startupSample = nullptr;
     if (auto lastSample = findSample(configCurrentSample.Value))
-        setCurrentSample(lastSample);
+        startupSample = lastSample;
     else if (!samples.empty())
-        setCurrentSample(samples[0].get());
+        startupSample = samples[0].get();
 
     //ImGuiIO& io = ImGui::GetIO();
     //io.SaveIniCb = [](const char* buffer, size_t size)
@@ -188,7 +193,6 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     //        memcpy(buffer, mySettings.data(), size);
     //    return mySettings.size();
     //};
-
 
     // Load Fonts
     // (there is a default font, this is only if you want to change it. see extra_fonts/README.txt for more details)
@@ -218,7 +222,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
-    while (msg.message != WM_QUIT)
+    while (true)
     {
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -230,6 +234,9 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
             DispatchMessage(&msg);
             continue;
         }
+
+        auto quit = (msg.message == WM_QUIT);
+
         ImGui_ImplDX11_NewFrame();
 
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
@@ -249,6 +256,17 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         ImGui::PopStyleVar();
         if (showWindows)
         {
+            if (startupSample != nullptr)
+            {
+                setCurrentSample(startupSample);
+                startupSample = nullptr;
+            }
+            if (quit)
+            {
+                configCurrentSample.Save(settings);
+                setCurrentSample(nullptr);
+            }
+
             //auto drawList = ImGui::GetWindowDrawList();
             //drawList->PushClipRectFullScreen();
             //drawList->AddRectFilled(ImVec2(0.0f, 0.0f), io.DisplaySize, IM_COL32(0, 255, 0, 128));
@@ -455,11 +473,10 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 
         g_pSwapChain->Present(1, 0); // Present with vsync
                                      //g_pSwapChain->Present(0, 0); // Present without vsync
+
+        if (quit)
+            break;
     }
-
-    configCurrentSample.Save(settings);
-
-    setCurrentSample(nullptr);
 
     //for (auto& sample : samples)
     //    sample->Finalize();

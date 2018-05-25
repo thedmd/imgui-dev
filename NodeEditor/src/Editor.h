@@ -1,6 +1,7 @@
 ﻿# pragma once
 # include "NodeEditor_Internal.h"
 # include "Builders/NodeBuilder.h"
+# include "Actions/NavigateAction.h"
 
 namespace ax {
 namespace NodeEditor {
@@ -15,11 +16,12 @@ struct Editor
     void NavigateTo(const ImVec2& point, bool immediate = false);
     void NavigateTo(const ImRect& rect, bool immediate = false);
 
-    const ImRect& Viewport() const;
+    void SetView(const ImVec2& origin, float scale);
+    const ImGuiEx::CanvasView& View() const;
 
     NodeBuilder BuildNode(NodeId id);
 
-    void Debug();
+    void Debug(bool inWindow = true);
 
 private:
     InputState BuildInputState();
@@ -30,20 +32,23 @@ private:
 
     ImGuiID         m_Id;
 
-    ImGuiEx::Canvas m_Canvas;
-    ImRect          m_Viewport;
+    ImGuiEx::Canvas     m_Canvas;
+    ImGuiEx::CanvasView m_CanvasView;
 
     ObjectCollection<Pin>  m_Pins;
     ObjectCollection<Node> m_Nodes;
     ObjectCollection<Link> m_Links;
-    Canvas                 m_BackgroundCanvas;
+    ax::NodeEditor::Canvas m_BackgroundCanvas;
 
     InputState m_InputState;
 
     Action*             m_CurrentAction = nullptr;
     Action*             m_PossibleAction = nullptr;
     NavigateAction      m_NavigateAction;
-    ImVector<Action*>   m_Actions;
+    Action*             m_Actions[1]
+    {
+        &m_NavigateAction
+    };
 };
 
 } // namespace NodeEditor

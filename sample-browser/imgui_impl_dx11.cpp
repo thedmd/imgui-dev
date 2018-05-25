@@ -28,6 +28,7 @@
 #include "imgui_impl_dx11.h"
 
 // DirectX
+struct IUnknown;
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #define DIRECTINPUT_VERSION 0x0800

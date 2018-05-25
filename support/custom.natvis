@@ -111,6 +111,10 @@
     </Expand>
   </Type>
 
+    <Type Name="ImGuiEx::CanvasView">
+        <DisplayString>Origin: {Origin}, Scale: {Scale,g}</DisplayString>
+    </Type>
+
     <Type Name="ax::SafeType&lt;*,*&gt;">
         <DisplayString>{m_Value}</DisplayString>
     </Type>

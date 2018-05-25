@@ -1,5 +1,6 @@
 ﻿# include "NodeEditor_Internal.h"
 # include "Editor.h"
+# include "Utilities/Drawing.h"
 
 ax::NodeEditor::Editor::Editor(const char* str_id)
     : m_Id(ImHash(str_id, 0))
@@ -14,21 +15,21 @@ bool ax::NodeEditor::Editor::Begin(const ImVec2& size)
     if (!m_Canvas.Begin(nullptr, size))
         return false;
 
+    m_CanvasView                = m_Canvas.View();
+    //m_CanvasView.Origin        += m_Canvas.ContentRect().Min;
+    //m_CanvasView.RoundedOrigin += m_Canvas.ContentRect().Min;
+
     m_InputState = BuildInputState();
 
     ProcessActions(m_InputState);
 
     ResetLiveObjects();
 
-    m_Viewport = m_Canvas.ViewRect();
-
     m_BackgroundCanvas.Touch();
 
-    // #debug
-    ImGui::GetWindowDrawList()->AddRectFilled(
-        m_Canvas.ViewRect().Min,
-        m_Canvas.ViewRect().Max,
-        IM_COL32(48, 48, 48, 255));
+    ImGui::GetWindowDrawList()->AddRectFilled(m_Canvas.ViewRect().Min, m_Canvas.ViewRect().Max, c_ConfigBackgroundColor);
+
+    Drawing::Grid(*ImGui::GetWindowDrawList(), m_Canvas.ViewRect(), c_ConfigGridSize, c_ConfigGridColor, m_Canvas.ViewScale());
 
     return true;
 }
@@ -51,20 +52,34 @@ void ax::NodeEditor::Editor::NavigateTo(const ImVec2& point, bool immediate)
 
 void ax::NodeEditor::Editor::NavigateTo(const ImRect& rect, bool immediate)
 {
-    auto rectSize   = rect.GetSize();
+    auto rectSize = rect.GetSize();
+    auto viewRect = m_Canvas.ViewRect();
     auto targetRect = ImRect(
-        rectSize.x > 0 ? rect.Min.x : m_Viewport.Min.x,
-        rectSize.y > 0 ? rect.Min.y : m_Viewport.Min.y,
-        rectSize.x > 0 ? rect.Max.x : m_Viewport.Max.x,
-        rectSize.y > 0 ? rect.Max.y : m_Viewport.Max.y
+        rectSize.x > 0 ? rect.Min.x : viewRect.Min.x,
+        rectSize.y > 0 ? rect.Min.y : viewRect.Min.y,
+        rectSize.x > 0 ? rect.Max.x : viewRect.Max.x,
+        rectSize.y > 0 ? rect.Max.y : viewRect.Max.y
     );
 
     m_Canvas.CenterView(targetRect);
+
+    m_CanvasView                = m_Canvas.View();
+    //m_CanvasView.Origin        += m_Canvas.ContentRect().Min;
+    //m_CanvasView.RoundedOrigin += m_Canvas.ContentRect().Min;
 }
 
-const ImRect& ax::NodeEditor::Editor::Viewport() const
+void ax::NodeEditor::Editor::SetView(const ImVec2& origin, float scale)
 {
-    return m_Viewport;
+    m_Canvas.SetView(origin, scale);
+
+    m_CanvasView                = m_Canvas.View();
+    //m_CanvasView.Origin        += m_Canvas.ContentRect().Min;
+    //m_CanvasView.RoundedOrigin += m_Canvas.ContentRect().Min;
+}
+
+const ImGuiEx::CanvasView& ax::NodeEditor::Editor::View() const
+{
+    return m_CanvasView;
 }
 
 ax::NodeEditor::NodeBuilder ax::NodeEditor::Editor::BuildNode(NodeId id)
@@ -74,7 +89,7 @@ ax::NodeEditor::NodeBuilder ax::NodeEditor::Editor::BuildNode(NodeId id)
     return NodeBuilder(*this, *m_Nodes.Get(id));
 }
 
-void ax::NodeEditor::Editor::Debug()
+void ax::NodeEditor::Editor::Debug(bool inWindow)
 {
     auto objectTypeToString = [](ObjectType type)
     {
@@ -109,31 +124,7 @@ void ax::NodeEditor::Editor::Debug()
         overlayDrawList->AddRect(worldBounds.Min, worldBounds.Max, color);
     };
 
-    auto formatModifiers = [](KeyModifers modifiers)
-    {
-        ImGuiTextBuffer buffer;
-        buffer.reserve(128);
-
-        if (modifiers == KeyModifers::None)
-            buffer.appendf("None");
-        else
-        {
-            if (!!(modifiers & KeyModifers::Ctrl))  { buffer.appendf("Ctrl | ");  }
-            if (!!(modifiers & KeyModifers::Shift)) { buffer.appendf("Shift | "); }
-            if (!!(modifiers & KeyModifers::Alt))   { buffer.appendf("Alt | ");   }
-            if (!!(modifiers & KeyModifers::Super)) { buffer.appendf("Super | "); }
-
-            if (!buffer.empty())
-            {
-                buffer.Buf.resize(buffer.Buf.size() - 3);
-                buffer.Buf.push_back(0);
-            }
-        }
-
-        return buffer;
-    };
-
-    if (ImGui::Begin("Debug##NodeEditorDebug", nullptr))
+    if (!inWindow || ImGui::Begin("Debug##NodeEditorDebug", nullptr))
     {
         ImGui::TextUnformatted("Input State");
         ImGui::Indent();
@@ -141,11 +132,18 @@ void ax::NodeEditor::Editor::Debug()
         ImGui::TextUnformatted("Active: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Active);
         ImGui::TextUnformatted("Clicked: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Clicked);
         ImGui::TextUnformatted("Double Clicked: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.DoubleClicked);
-        ImGui::Text("Modifiers: %s", formatModifiers(m_InputState.Modifiers).c_str());
+        ImGui::Text("Modifiers: %s", Debug::ToString(m_InputState.Modifiers).c_str());
         ImGui::Unindent();
         ImGui::TextUnformatted("Stats");
         ImGui::Indent();
+        ImGui::Text("View: %s", Debug::ToString(m_Canvas.ViewRect()).c_str());
         ImGui::Text("Current Action: %s", m_CurrentAction ? m_CurrentAction->Name() : "---");
+        if (m_CurrentAction)
+        {
+            ImGui::Indent();
+            m_CurrentAction->Debug();
+            ImGui::Unindent();
+        }
         ImGui::Text("Possible Action: %s", m_PossibleAction ? m_PossibleAction->Name() : "---");
         ImGui::Text("Pins: %d", m_Pins.Count());
         ImGui::Text("Nodes: %d", m_Nodes.Count());
@@ -160,10 +158,7 @@ void ax::NodeEditor::Editor::Debug()
                 auto highlight = ImGui::IsItemHovered();
                 if (expand)
                 {
-                    ImGui::Text("Bounds: { l: %g, t: %g, r: %g, b: %g, w: %g, h: %g }",
-                        node->m_Bounds.Min.x, node->m_Bounds.Min.y,
-                        node->m_Bounds.Max.x, node->m_Bounds.Max.y,
-                        node->m_Bounds.GetWidth(), node->m_Bounds.GetHeight());
+                    ImGui::Text("Bounds: %s", Debug::ToString(node->m_Bounds).c_str());
                     ImGui::TreePop();
                 }
 
@@ -175,7 +170,9 @@ void ax::NodeEditor::Editor::Debug()
         highlightNode(m_InputState.Node.Hovered, IM_COL32(255,   0, 0, 255));
         highlightNode(m_InputState.Node.Active,  IM_COL32(255, 255, 0, 255));
     }
-    ImGui::End();
+
+    if (inWindow)
+        ImGui::End();
 }
 
 ax::NodeEditor::InputState ax::NodeEditor::Editor::BuildInputState()

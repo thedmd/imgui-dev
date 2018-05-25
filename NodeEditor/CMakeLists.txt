@@ -7,6 +7,7 @@ set(_sources
     src/NodeEditor_Internal.h
     src/NodeEditor_Internal.inl
     src/NodeEditor.cpp
+    src/Debug.cpp
     src/Editor.h
     src/Editor.cpp
     src/Actions.h
@@ -17,6 +18,8 @@ set(_sources
     src/Builders/NodeBuilder.h
     src/Builders/NodeBuilder.cpp
     src/Utilities/BitmaskType.h
+    src/Utilities/Drawing.h
+    src/Utilities/Drawing.cpp
 )
 
 source_group("" FILES ${_sources})

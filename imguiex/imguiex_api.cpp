@@ -56,7 +56,7 @@ void ImGuiEx::EndCanvas()
     context->PopCanvas();
 }
 
-void ImGuiEx::CanvasView(const ImVec2& origin, float scale)
+void ImGuiEx::CanvasSetView(const ImVec2& origin, float scale)
 {
     CurrentContextPtr context;
 

@@ -14,6 +14,9 @@ struct NodeEditorSample: Sample
 
     virtual void Initialize() override
     {
+        ImGui::Columns(2, "MainSplit");
+        ImGui::SetColumnOffset(1, ImGui::GetWindowContentRegionWidth() * 0.22f);
+        ImGui::Columns();
     }
 
     virtual void Finalize() override
@@ -22,6 +25,12 @@ struct NodeEditorSample: Sample
 
     virtual void Frame() override
     {
+        ImGui::Columns(2, "MainSplit");
+
+        m_Editor.Debug(false);
+
+        ImGui::NextColumn();
+
         if (m_Editor.Begin())
         {
 
@@ -38,7 +47,7 @@ struct NodeEditorSample: Sample
             m_Editor.End();
         }
 
-        m_Editor.Debug();
+        ImGui::Columns();
     }
 
     ax::NodeEditor::Editor m_Editor = ax::NodeEditor::Editor("editor");

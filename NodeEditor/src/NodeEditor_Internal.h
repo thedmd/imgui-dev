@@ -10,6 +10,11 @@
 namespace ax {
 namespace NodeEditor {
 
+static const ImU32  c_ConfigBackgroundColor     = ImColor( 60,  60,  70, 200);
+static const float  c_ConfigGridSize            = 32.0f;
+static const ImU32  c_ConfigGridColor           = ImColor(120, 120, 120,  40);
+static const int    c_ConfigScrollButtonIndex   = 0;
+
 struct Object;
 struct Pin;
 struct Node;
@@ -153,6 +158,13 @@ struct InputState
     KeyModifers        Modifiers = KeyModifers::None;
 };
 
+
+namespace Debug {
+ImGuiTextBuffer ToString(const ImVec2& p);
+ImGuiTextBuffer ToString(const ImRect& rect);
+ImGuiTextBuffer ToString(const ImGuiEx::CanvasView& view);
+ImGuiTextBuffer ToString(KeyModifers modifiers);
+} // namespace Debug
 
 } // namespace NodeEditor
 } // namespace ax

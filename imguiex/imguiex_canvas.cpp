@@ -58,13 +58,13 @@ void ImGuiEx::Canvas::End()
 void ImGuiEx::Canvas::SetView(const ImVec2& worldOrigin, float scale)
 {
     LeaveLocalSpace();
-
-    m_View.Origin        = worldOrigin;
-    m_View.RoundedOrigin = ImFloor(worldOrigin);
-    m_View.Scale         = scale;
-    m_View.InvScale      = scale ? 1.0f / scale : 0.0f;
-
+    m_View.Set(worldOrigin, scale);
     EnterLocalSpace();
+}
+
+void ImGuiEx::Canvas::SetView(const CanvasView& view)
+{
+    SetView(view.Origin, view.Scale);
 }
 
 void ImGuiEx::Canvas::CenterView(const ImVec2& virtualPoint)
@@ -126,12 +126,12 @@ void ImGuiEx::Canvas::Resume()
 
 ImVec2 ImGuiEx::Canvas::ToParent(const ImVec2& point) const
 {
-    return point * m_View.Scale + m_StartPos + m_View.RoundedOrigin;
+    return m_View.ToWorld(point + m_StartPos);
 }
 
 ImVec2 ImGuiEx::Canvas::FromParent(const ImVec2& point) const
 {
-    return (point - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
+    return m_View.ToLocal(point - m_StartPos);
 }
 
 ImVec2 ImGuiEx::Canvas::ToWorld(const ImVec2& point) const
@@ -155,7 +155,7 @@ void ImGuiEx::Canvas::SaveInputState()
     auto& io = ImGui::GetIO();
     m_MousePosBackup     = io.MousePos;
     m_MousePosPrevBackup = io.MousePosPrev;
-    for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
+    for (auto i = 0; i < IM_ARRAYSIZE(m_MouseClickedPosBackup); ++i)
         m_MouseClickedPosBackup[i] = io.MouseClickedPos[i];
 
     // Record cursor max to prevent scrollbars from appearing.
@@ -167,7 +167,7 @@ void ImGuiEx::Canvas::RestoreInputState()
     auto& io = ImGui::GetIO();
     io.MousePos     = m_MousePosBackup;
     io.MousePosPrev = m_MousePosPrevBackup;
-    for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
+    for (auto i = 0; i < IM_ARRAYSIZE(m_MouseClickedPosBackup); ++i)
         io.MouseClickedPos[i] = m_MouseClickedPosBackup[i];
     ImGui::GetCurrentWindow()->DC.CursorMaxPos = m_WindowCursorMaxBackup;
 }
@@ -206,7 +206,7 @@ void ImGuiEx::Canvas::EnterLocalSpace()
     auto& io = ImGui::GetIO();
     io.MousePos     = (m_MousePosBackup     - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
     io.MousePosPrev = (m_MousePosPrevBackup - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
-    for (auto i = 0; i < IM_SIZE_OF_ARRAY(m_MouseClickedPosBackup); ++i)
+    for (auto i = 0; i < IM_ARRAYSIZE(m_MouseClickedPosBackup); ++i)
         io.MouseClickedPos[i] = (m_MouseClickedPosBackup[i] - m_StartPos - m_View.RoundedOrigin) * m_View.InvScale;
 
     m_ViewRect.Min = ImVec2(0.0f, 0.0f) - m_View.RoundedOrigin * m_View.InvScale;

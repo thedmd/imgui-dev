@@ -2,10 +2,6 @@
 # include "imguiex.h"
 # include "imgui_internal.h"
 
-namespace ImGuiEx {
-
-# define IM_SIZE_OF_ARRAY(xxx)   (sizeof(xxx) / sizeof(*(xxx)))
-
 static inline ImVec2 ImSelectPositive(const ImVec2& lhs, const ImVec2& rhs) { return ImVec2(lhs.x > 0.0f ? lhs.x : rhs.x, lhs.y > 0.0f ? lhs.y : rhs.y); }
 
 # if defined(IMGUI_DEFINE_MATH_OPERATORS)
@@ -34,6 +30,8 @@ static inline ImRect   operator*(const ImMatrix& lhs, const ImRect& rhs)
     return out;
 }
 # endif
+
+namespace ImGuiEx {
 
 struct Canvas;
 

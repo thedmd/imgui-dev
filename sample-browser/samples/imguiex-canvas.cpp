@@ -146,7 +146,7 @@ struct CanvasSample: Sample
             statsContentSize.Min = canvasContentMin;
             statsContentSize.Max = canvasContentMax;
 
-            ImGuiEx::CanvasView(canvasContentSize * 0.5f + ImMul(canvasContentSize * 0.5f, ImVec2(configOriginX, configOriginY)), configScale);
+            ImGuiEx::CanvasSetView(canvasContentSize * 0.5f + ImMul(canvasContentSize * 0.5f, ImVec2(configOriginX, configOriginY)), configScale);
             statsOrigin = ImGuiEx::CanvasViewOrigin();
             statsScale  = ImGuiEx::CanvasViewScale();
 
@@ -190,7 +190,7 @@ struct CanvasSample: Sample
                 ImGui::SetCursorScreenPos(ImVec2(-200.0f, -200.0f));
                 if (ImGuiEx::BeginCanvas("Inner", ImVec2(180, 180)))
                 {
-                    ImGuiEx::CanvasView(ImVec2(0.0f, 0.0f), 1.0f / configScale);
+                    ImGuiEx::CanvasSetView(ImVec2(0.0f, 0.0f), 1.0f / configScale);
                     statsInnerOrigin = ImGuiEx::CanvasViewOrigin();
                     statsInnerScale  = ImGuiEx::CanvasViewScale();
 

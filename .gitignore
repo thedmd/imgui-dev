@@ -6,3 +6,4 @@
 /**/*.vcxproj.user
 /**/*.ini
 /**/*.vcxproj
+/.build
