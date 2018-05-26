@@ -17,7 +17,7 @@ ax::NodeEditor::Action::Result ax::NodeEditor::NavigateAction::Accept(const Inpu
 
     auto& io = ImGui::GetIO();
 
-    if (inputState.Canvas.Active && ImGui::IsMouseDragging(c_ConfigScrollButtonIndex, 0.0f))
+    if (ImGui::IsMouseDragging(c_ConfigScrollButtonIndex, 0.0f))
     {
         m_IsActive          = true;
         m_InitialView       = m_Editor.View();
@@ -34,7 +34,7 @@ ax::NodeEditor::Action::Result ax::NodeEditor::NavigateAction::Accept(const Inpu
         m_Editor.SetView(view.Origin, view.Scale);
     }
 
-    if (inputState.Canvas.Hovered && !inputState.Object.Active)
+    if (inputState.Canvas.Hovered)
         return Possible;
 
     return No;

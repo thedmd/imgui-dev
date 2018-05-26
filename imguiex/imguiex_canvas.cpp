@@ -23,6 +23,8 @@ bool ImGuiEx::Canvas::Begin(Canvas* parent, const ImVec2& size)
     if (ImGui::IsClippedEx(bounding_rect, m_ID, false))
         return false;
 
+    m_ContentView.Set(m_View.Origin + m_StartPos, m_View.Scale);
+
     // #debug: Canvas content.
     //m_DrawList->AddRectFilled(m_StartPos, m_StartPos + m_CurrentSize, IM_COL32(0, 0, 0, 64));
     //m_DrawList->AddRect(bounding_rect.Min, bounding_rect.Max, IM_COL32(255, 0, 255, 64));
@@ -59,6 +61,7 @@ void ImGuiEx::Canvas::SetView(const ImVec2& worldOrigin, float scale)
 {
     LeaveLocalSpace();
     m_View.Set(worldOrigin, scale);
+    m_ContentView.Set(worldOrigin + m_StartPos, scale);
     EnterLocalSpace();
 }
 
@@ -126,12 +129,12 @@ void ImGuiEx::Canvas::Resume()
 
 ImVec2 ImGuiEx::Canvas::ToParent(const ImVec2& point) const
 {
-    return m_View.ToWorld(point + m_StartPos);
+    return m_ContentView.ToWorld(point);
 }
 
 ImVec2 ImGuiEx::Canvas::FromParent(const ImVec2& point) const
 {
-    return m_View.ToLocal(point - m_StartPos);
+    return m_ContentView.ToLocal(point);
 }
 
 ImVec2 ImGuiEx::Canvas::ToWorld(const ImVec2& point) const

@@ -13,7 +13,8 @@ namespace NodeEditor {
 static const ImU32  c_ConfigBackgroundColor     = ImColor( 60,  60,  70, 200);
 static const float  c_ConfigGridSize            = 50.0f;//32.0f;
 static const ImU32  c_ConfigGridColor           = ImColor(120, 120, 120,  40);
-static const int    c_ConfigScrollButtonIndex   = 0;
+static const int    c_ConfigDragNodeButtonIndex = 0;
+static const int    c_ConfigScrollButtonIndex   = 1;
 
 struct Object;
 struct Pin;
@@ -159,8 +160,27 @@ struct InputState
     KeyModifers        Modifiers = KeyModifers::None;
 };
 
+enum class SelectOperation
+{
+    Replace,
+    Add,
+    Remove,
+    Toggle
+};
+
+struct Selection
+{
+    bool Select(Object* object, SelectOperation operation = SelectOperation::Replace);
+    bool Select(const ImVector<Object*>& objects, SelectOperation operation = SelectOperation::Replace);
+
+    void DeselectAll();
+
+    ImVector<Object*> Objects;
+};
 
 namespace Debug {
+const char*     ToString(ObjectType type);
+ImGuiTextBuffer ToString(const Object* o);
 ImGuiTextBuffer ToString(const ImVec2& p);
 ImGuiTextBuffer ToString(const ImRect& rect);
 ImGuiTextBuffer ToString(const ImGuiEx::CanvasView& view);

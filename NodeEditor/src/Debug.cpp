@@ -1,5 +1,30 @@
 # include "NodeEditor_Internal.h"
 
+const char* ax::NodeEditor::Debug::ToString(ObjectType type)
+{
+    switch (type)
+    {
+        case ObjectType::Pin:     return "Pin";
+        case ObjectType::Node:    return "Node";
+        case ObjectType::Link:    return "Link";
+        case ObjectType::Canvas:  return "Canvas";
+        default:                  return "???";
+    }
+}
+
+ImGuiTextBuffer ax::NodeEditor::Debug::ToString(const Object* o)
+{
+    ImGuiTextBuffer buffer;
+    buffer.reserve(64);
+
+    if (o)
+        buffer.appendf("{ %s: %p }", ToString(o->Type()), o->m_Id.AsPointer());
+    else
+        buffer.appendf("{ null }");
+
+    return buffer;
+}
+
 ImGuiTextBuffer ax::NodeEditor::Debug::ToString(const ImVec2& p)
 {
     ImGuiTextBuffer buffer;

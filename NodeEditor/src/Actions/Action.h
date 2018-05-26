@@ -24,6 +24,8 @@ struct Action
     virtual void Dismiss() {}
     virtual void Cancel() {}
 
+    virtual void Draw() {}
+
     virtual ImGuiMouseCursor Cursor() const { return ImGuiMouseCursor_Arrow; }
 
     virtual void Debug() {}

@@ -42,6 +42,16 @@ struct NodeEditorSample: Sample
                 ImGui::Text("I'm a node!");
             }
 
+            {
+                auto builder = m_Editor.BuildNode(2);
+                ImGui::Text("I'm a second node!");
+            }
+
+            {
+                auto builder = m_Editor.BuildNode(3);
+                ImGui::Text("I'm a third node!");
+            }
+
 
 
             m_Editor.End();

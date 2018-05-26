@@ -8,13 +8,18 @@ set(_sources
     src/NodeEditor_Internal.inl
     src/NodeEditor.cpp
     src/Debug.cpp
+    src/Selection.cpp
     src/Editor.h
     src/Editor.cpp
     src/Actions.h
     src/Actions/Action.h
     src/Actions/Action.cpp
+    src/Actions/DragAction.h
+    src/Actions/DragAction.cpp
     src/Actions/NavigateAction.h
     src/Actions/NavigateAction.cpp
+    src/Actions/SelectAction.h
+    src/Actions/SelectAction.cpp
     src/Builders/NodeBuilder.h
     src/Builders/NodeBuilder.cpp
     src/Utilities/BitmaskType.h

@@ -66,12 +66,13 @@ struct Canvas
     ImVec2 ToWorld(const ImVec2& point) const;
     ImVec2 FromWorld(const ImVec2& point) const;
 
-    const ImRect& ContentRect() const { return m_ContentRect; }
-    const CanvasView& View()    const { return m_View; }
-    const ImRect& ViewRect()    const { return m_ViewRect; }
-    const ImVec2& ViewOrigin()  const { return m_View.Origin; }
-    float         ViewScale()   const { return m_View.Scale; }
-    bool          IsSuspended() const { return m_SuspendCounter > 0; }
+    const ImRect&     ContentRect() const { return m_ContentRect; }
+    const CanvasView& ContentView() const { return m_ContentView; }
+    const CanvasView& View()        const { return m_View; }
+    const ImRect&     ViewRect()    const { return m_ViewRect; }
+    const ImVec2&     ViewOrigin()  const { return m_View.Origin; }
+    float             ViewScale()   const { return m_View.Scale; }
+    bool              IsSuspended() const { return m_SuspendCounter > 0; }
 
 private:
     void SaveInputState();
@@ -92,6 +93,7 @@ private:
     int m_DrawListCommadBufferSize;
     int m_DrawListStartVertexIndex;
 
+    CanvasView m_ContentView;
     CanvasView m_View;
     ImRect     m_ViewRect;
 

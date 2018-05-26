@@ -7,6 +7,8 @@ ax::NodeEditor::Editor::Editor(const char* str_id)
     , m_Canvas(m_Id)
     , m_BackgroundCanvas(CanvasId(0))
     , m_NavigateAction(*this)
+    , m_SelectAction(*this)
+    , m_DragNodeAction(*this)
 {
 }
 
@@ -15,7 +17,8 @@ bool ax::NodeEditor::Editor::Begin(const ImVec2& size)
     if (!m_Canvas.Begin(nullptr, size))
         return false;
 
-    m_CanvasView                = m_Canvas.View();
+    m_CanvasView        = m_Canvas.View();
+    m_CanvasContentView = m_Canvas.ContentView();
     //m_CanvasView.Origin        += m_Canvas.ContentRect().Min;
     //m_CanvasView.RoundedOrigin += m_Canvas.ContentRect().Min;
 
@@ -27,12 +30,20 @@ bool ax::NodeEditor::Editor::Begin(const ImVec2& size)
 
     m_BackgroundCanvas.Touch();
 
-    ImGui::GetWindowDrawList()->AddRectFilled(m_Canvas.ViewRect().Min, m_Canvas.ViewRect().Max, c_ConfigBackgroundColor);
-
     m_Canvas.Suspend();
-    Drawing::Grid(*ImGui::GetWindowDrawList(),
-        m_Canvas.ContentRect(), m_Canvas.ViewOrigin(), c_ConfigGridSize * m_Canvas.ViewScale(), c_ConfigGridColor);
+    auto drawList = ImGui::GetWindowDrawList();
+    drawList->AddRectFilled(
+        m_Canvas.ContentRect().Min,
+        m_Canvas.ContentRect().Max,
+        c_ConfigBackgroundColor);
+    Drawing::Grid(*drawList,
+        m_Canvas.ContentRect(),
+        m_Canvas.ViewOrigin(),
+        c_ConfigGridSize * m_Canvas.ViewScale(),
+        c_ConfigGridColor);
     m_Canvas.Resume();
+
+    DrawActions();
 
     return true;
 }
@@ -66,7 +77,8 @@ void ax::NodeEditor::Editor::NavigateTo(const ImRect& rect, bool immediate)
 
     m_Canvas.CenterView(targetRect);
 
-    m_CanvasView                = m_Canvas.View();
+    m_CanvasView        = m_Canvas.View();
+    m_CanvasContentView = m_Canvas.ContentView();
     //m_CanvasView.Origin        += m_Canvas.ContentRect().Min;
     //m_CanvasView.RoundedOrigin += m_Canvas.ContentRect().Min;
 }
@@ -74,18 +86,55 @@ void ax::NodeEditor::Editor::NavigateTo(const ImRect& rect, bool immediate)
 void ax::NodeEditor::Editor::SetView(const ImVec2& origin, float scale)
 {
     m_Canvas.SetView(origin, scale);
-    m_CanvasView = m_Canvas.View();
+    m_CanvasView        = m_Canvas.View();
+    m_CanvasContentView = m_Canvas.ContentView();
 }
 
 void ax::NodeEditor::Editor::SetView(const ImGuiEx::CanvasView& view)
 {
     m_Canvas.SetView(view);
-    m_CanvasView = m_Canvas.View();
+    m_CanvasView        = m_Canvas.View();
+    m_CanvasContentView = m_Canvas.ContentView();
 }
 
 const ImGuiEx::CanvasView& ax::NodeEditor::Editor::View() const
 {
     return m_CanvasView;
+}
+
+const ImGuiEx::CanvasView& ax::NodeEditor::Editor::ContentView() const
+{
+    return m_CanvasContentView;
+}
+
+void ax::NodeEditor::Editor::SuspendView()
+{
+    m_Canvas.Suspend();
+}
+
+void ax::NodeEditor::Editor::ResumeView()
+{
+    m_Canvas.Resume();
+}
+
+void ax::NodeEditor::Editor::Select(Object* object, SelectOperation operation)
+{
+    m_Selection.Select(object, operation);
+}
+
+void ax::NodeEditor::Editor::Select(const ImVector<Object*>& objects, SelectOperation operation)
+{
+    m_Selection.Select(objects, operation);
+}
+
+void ax::NodeEditor::Editor::DeselectAll()
+{
+    m_Selection.DeselectAll();
+}
+
+const ax::NodeEditor::Selection& ax::NodeEditor::Editor::SelectedObjects() const
+{
+    return m_Selection;
 }
 
 ax::NodeEditor::NodeBuilder ax::NodeEditor::Editor::BuildNode(NodeId id)
@@ -97,29 +146,6 @@ ax::NodeEditor::NodeBuilder ax::NodeEditor::Editor::BuildNode(NodeId id)
 
 void ax::NodeEditor::Editor::Debug(bool inWindow)
 {
-    auto objectTypeToString = [](ObjectType type)
-    {
-        switch (type)
-        {
-            case ObjectType::Pin:     return "Pin";
-            case ObjectType::Node:    return "Node";
-            case ObjectType::Link:    return "Link";
-            case ObjectType::Canvas:  return "Canvas";
-            default:                  return "???";
-        }
-    };
-
-    auto objectHeader = [&objectTypeToString](Object* object)
-    {
-        if (!object)
-        {
-            ImGui::TextUnformatted("---");
-            return;
-        }
-
-        ImGui::Text("%s (%p)", objectTypeToString(object->Type()), object->m_Id.AsPointer());
-    };
-
     auto highlightNode = [this](Node* node, ImU32 color)
     {
         if (!node)
@@ -130,32 +156,53 @@ void ax::NodeEditor::Editor::Debug(bool inWindow)
         overlayDrawList->AddRect(worldBounds.Min, worldBounds.Max, color);
     };
 
+    if (m_InputState.Object.Clicked)
+        m_DebugLastClicked = m_InputState.Object.Clicked;
+    else if (m_DebugLastClicked && !m_DebugLastClicked->m_IsLive)
+        m_DebugLastClicked = nullptr;
+
+    if (m_InputState.Object.DoubleClicked)
+        m_DebugLastDoubleClicked = m_InputState.Object.DoubleClicked;
+    else if (m_DebugLastDoubleClicked && !m_DebugLastDoubleClicked->m_IsLive)
+        m_DebugLastDoubleClicked = nullptr;
+
     if (!inWindow || ImGui::Begin("Debug##NodeEditorDebug", nullptr))
     {
         ImGui::TextUnformatted("Input State");
         ImGui::Indent();
         ImGui::Text("Mouse: %s", Debug::ToString(m_InputState.MousePosition).c_str());
-        ImGui::TextUnformatted("Hovered: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Hovered);
-        ImGui::TextUnformatted("Active: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Active);
-        ImGui::TextUnformatted("Clicked: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Clicked);
-        ImGui::TextUnformatted("Double Clicked: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.DoubleClicked);
+        ImGui::Text("Hovered: %s", Debug::ToString(m_InputState.Object.Hovered).c_str());
+        ImGui::Text("Active: %s", Debug::ToString(m_InputState.Object.Active).c_str());
+        ImGui::Text("Clicked: %s", Debug::ToString(m_InputState.Object.Clicked).c_str());
+        ImGui::Text("Double Clicked: %s", Debug::ToString(m_InputState.Object.DoubleClicked).c_str());
+        ImGui::Text("Last Clicked: %s", Debug::ToString(m_DebugLastClicked).c_str());
+        ImGui::Text("Last Double Clicked: %s", Debug::ToString(m_DebugLastDoubleClicked).c_str());
         ImGui::Text("Modifiers: %s", Debug::ToString(m_InputState.Modifiers).c_str());
         ImGui::Unindent();
         ImGui::TextUnformatted("Stats");
         ImGui::Indent();
         ImGui::Text("View: %s", Debug::ToString(m_Canvas.ViewRect()).c_str());
         ImGui::Text("Current Action: %s", m_CurrentAction ? m_CurrentAction->Name() : "---");
-        if (m_CurrentAction)
-        {
-            ImGui::Indent();
-            m_CurrentAction->Debug();
-            ImGui::Unindent();
-        }
         ImGui::Text("Possible Action: %s", m_PossibleAction ? m_PossibleAction->Name() : "---");
         ImGui::Text("Pins: %d", m_Pins.Count());
         ImGui::Text("Nodes: %d", m_Nodes.Count());
         ImGui::Text("Links: %d", m_Links.Count());
         ImGui::Unindent();
+
+        char selectionHeader[64];
+        ImFormatString(selectionHeader, 64, "Selection (%d)##Selection", m_Selection.Objects.Size);
+        if (ImGui::CollapsingHeader(selectionHeader, ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Indent();
+            for (auto& selection : m_Selection.Objects)
+            {
+                ImGui::Text("%s", Debug::ToString(selection).c_str());
+                //auto highlight = ImGui::IsItemHovered();
+                //if (highlight)
+                //    highlightNode(node, IM_COL32(255, 0, 0, 255));
+            }
+            ImGui::Unindent();
+        }
 
         if (ImGui::CollapsingHeader("Nodes", ImGuiTreeNodeFlags_DefaultOpen))
         {
@@ -175,8 +222,15 @@ void ax::NodeEditor::Editor::Debug(bool inWindow)
         }
         if (ImGui::CollapsingHeader("Actions", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (ImGui::CollapsingHeader("Navigate", ImGuiTreeNodeFlags_DefaultOpen))
-                m_NavigateAction.Debug();
+            for (auto action : m_Actions)
+            {
+                if (ImGui::CollapsingHeader(action->Name(), ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    ImGui::Indent();
+                    action->Debug();
+                    ImGui::Unindent();
+                }
+            }
         }
     }
 
@@ -190,8 +244,8 @@ ax::NodeEditor::InputState ax::NodeEditor::Editor::BuildInputState()
 
     result.MousePosition = ImGui::GetIO().MousePos;
 
-    if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
-        return result;
+    //if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    //    return result;
 
     struct WidgetState
     {
@@ -216,7 +270,8 @@ ax::NodeEditor::InputState ax::NodeEditor::Editor::BuildInputState()
 
         WidgetState state;
 
-        bool pressed = ImGui::ButtonBehavior(bounds, id, &state.Hovered, &state.Active, ImGuiButtonFlags_PressedOnClickRelease | ImGuiButtonFlags_PressedOnDoubleClick);
+        bool pressed = ImGui::ButtonBehavior(bounds, id, &state.Hovered, &state.Active,
+            ImGuiButtonFlags_PressedOnClickRelease | ImGuiButtonFlags_PressedOnDoubleClick);
 
         bool isMouseDoubleClicked = ImGui::IsMouseDoubleClicked(0);
         state.Clicked       = pressed && !isMouseDoubleClicked;
@@ -227,6 +282,8 @@ ax::NodeEditor::InputState ax::NodeEditor::Editor::BuildInputState()
     };
 
     auto window = ImGui::GetCurrentWindow();
+
+    ImGui::PushID(m_Id);
 
     for (auto& node : m_Nodes.View())
     {
@@ -240,6 +297,8 @@ ax::NodeEditor::InputState ax::NodeEditor::Editor::BuildInputState()
     }
 
     widget(m_Canvas.ViewRect(), window->GetID(m_BackgroundCanvas.m_Id.AsPointer()), result.Canvas, &m_BackgroundCanvas);
+
+    ImGui::PopID();
 
     auto& io = ImGui::GetIO();
     if (io.KeyCtrl)  result.Modifiers |= KeyModifers::Ctrl;
@@ -280,6 +339,12 @@ void ax::NodeEditor::Editor::ProcessActions(const InputState& inputState)
         m_CurrentAction = nextAction;
 
     m_PossibleAction = possibleAction;
+}
+
+void ax::NodeEditor::Editor::DrawActions()
+{
+    for (auto action : m_Actions)
+        action->Draw();
 }
 
 void ax::NodeEditor::Editor::ResetLiveObjects()
