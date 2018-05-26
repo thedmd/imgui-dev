@@ -17,6 +17,7 @@ struct Editor
     void NavigateTo(const ImRect& rect, bool immediate = false);
 
     void SetView(const ImVec2& origin, float scale);
+    void SetView(const ImGuiEx::CanvasView& view);
     const ImGuiEx::CanvasView& View() const;
 
     NodeBuilder BuildNode(NodeId id);

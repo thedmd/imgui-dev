@@ -4,7 +4,7 @@
 namespace ax {
 namespace Drawing {
 
-void Grid(ImDrawList& drawList, const ImRect& rect, float gridSize, ImU32 gridColor, float scale = 1.0f);
+void Grid(ImDrawList& drawList, const ImRect& rect, const ImVec2& gridOrigin, float gridSize, ImU32 gridColor);
 
 } // namespace Drawing
 } // namespace ax

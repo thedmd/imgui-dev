@@ -13,21 +13,28 @@ static const int   c_ConfigZoomLevelCount = sizeof(c_ConfigZoomLevels) / sizeof(
 
 ax::NodeEditor::Action::Result ax::NodeEditor::NavigateAction::Accept(const InputState& inputState)
 {
-    IM_ASSERT(m_IsActive == false);
+    IM_ASSERT(!m_IsActive);
+
+    auto& io = ImGui::GetIO();
 
     if (inputState.Canvas.Active && ImGui::IsMouseDragging(c_ConfigScrollButtonIndex, 0.0f))
     {
-        auto& io = ImGui::GetIO();
-
-        m_IsActive              = true;
-        m_InitialView           = m_Editor.View();
-        m_CurrentView           = m_InitialView;
-        m_InitialClickPosition  = m_Editor.View().ToWorld(io.MouseClickedPos[c_ConfigScrollButtonIndex]);
-        m_CurrentClickPosition  = m_InitialClickPosition;
+        m_IsActive          = true;
+        m_InitialView       = m_Editor.View();
+        m_LastMousePosition = m_InitialView.ToWorld(io.MouseClickedPos[c_ConfigScrollButtonIndex]);
 
         return Yes;
     }
-    else if (inputState.Canvas.Hovered && !inputState.Object.Active)
+
+    if (io.MouseWheel != 0.0f)
+    {
+        auto view           = m_Editor.View();
+        auto worldZoomPoint = view.ToWorld(io.MousePos);
+        ApplyZoom(view, worldZoomPoint, WheelToZoomDirection(io.MouseWheel));
+        m_Editor.SetView(view.Origin, view.Scale);
+    }
+
+    if (inputState.Canvas.Hovered && !inputState.Object.Active)
         return Possible;
 
     return No;
@@ -35,92 +42,52 @@ ax::NodeEditor::Action::Result ax::NodeEditor::NavigateAction::Accept(const Inpu
 
 bool ax::NodeEditor::NavigateAction::Process(const InputState& inputState)
 {
-    IM_ASSERT(m_IsActive == true);
+    IM_ASSERT(m_IsActive);
 
     if (ImGui::IsMouseDragging(c_ConfigScrollButtonIndex, 0.0f))
     {
         auto& io = ImGui::GetIO();
 
-        m_MousePosition = m_Editor.View().ToWorld(io.MousePos);
-        m_CurrentView   = m_Editor.View();
+        auto view       = m_Editor.View();
+        m_MousePosition = view.ToWorld(io.MousePos);
 
         if (io.MouseWheel != 0.0f)
-        {
-            auto newScale = NextZoomLevel(m_CurrentView.Scale, io.MouseWheel > 0.0f ? ZoomDirection::In : ZoomDirection::Out);
+            ApplyZoom(view, m_MousePosition, WheelToZoomDirection(io.MouseWheel));
 
-            ////auto relativeScale = m_CurrentScale / newScale;
-            //auto origin = m_Editor.Canvas().ToWorld(m_CurrentViewOrigin);
+        m_MouseDragDelta = (m_MousePosition - m_LastMousePosition);
+        m_LastMousePosition = m_MousePosition;
 
-            //m_CurrentViewOrigin = (origin - m_InitialViewOrigin) * (newScale / m_InitialViewScale) + origin;
+        view.SetOrigin(view.Origin + m_MouseDragDelta);
 
-            ////viewport.Translate(-io.MousePos);
-            ////viewport.Min = viewport.Min * relativeScale;
-            ////viewport.Max = viewport.Max * relativeScale;
-            ////viewport.Translate(io.MousePos);
-            //m_CurrentViewScale = newScale;
-
-            
-
-            //auto localClickPos = m_InitialView.ToLocal(m_MousePosition);
-            //m_CurrentView.Set(m_CurrentView.Origin, newScale);
-            //auto worldClickPos = m_CurrentView.ToWorld(localClickPos);
-
-            //m_CurrentClickPosition = m_InitialClickPosition + (worldClickPos - m_MousePosition);
-        }
-
-        m_LastDelta = (m_MousePosition - m_CurrentClickPosition);
-        //auto delta2 = ImGui::GetMouseDragDelta(c_ConfigScrollButtonIndex);
-
-        //auto viewport = m_Editor.Canvas().ViewRect();
-
-        //auto& io = ImGui::GetIO();
-        //if (io.MouseWheel != 0.0f)
-        //{
-        //    m_CurrentScale = NextZoomLevel(m_CurrentScale, io.MouseWheel > 0.0f ? ZoomDirection::In : ZoomDirection::Out);
-
-        //    auto relativeScale = m_CurrentScale / m_InitialScale;
-
-        //    viewport.Translate(-io.MousePos);
-        //    viewport.Min = viewport.Min * relativeScale;
-        //    viewport.Max = viewport.Max * relativeScale;
-        //    viewport.Translate(io.MousePos);
-        //}
-
-        //m_CurrentView.Set(m_CurrentView.Origin + delta, m_CurrentView.Scale);
-
-        //viewport.Translate(-delta);
-
-        //m_Editor.NavigateTo(viewport);
-
-        m_Editor.SetView(m_CurrentView.Origin + m_LastDelta, m_CurrentView.Scale);
+        m_Editor.SetView(view);
     }
     else
-    {
-        //m_Editor.NavigateTo(m_StartViewport);
-
-        m_IsActive = false;
-    }
+        Dismiss();
 
     return m_IsActive;
 }
 
 void ax::NodeEditor::NavigateAction::Dismiss()
 {
-    if (m_IsActive)
-    {
-        m_IsActive = false;
-        //m_Editor.NavigateTo(m_V)
-    }
+    IM_ASSERT(m_IsActive);
+
+    m_IsActive = false;
+}
+
+void ax::NodeEditor::NavigateAction::Cancel()
+{
+    IM_ASSERT(m_IsActive);
+
+    m_IsActive = false;
+    m_Editor.SetView(m_InitialView);
 }
 
 void ax::NodeEditor::NavigateAction::Debug()
 {
     ImGui::Text("Mouse Position: %s", Debug::ToString(m_MousePosition).c_str());
+    ImGui::Text("Mouse Delta: %s", Debug::ToString(m_MouseDragDelta).c_str());
+    ImGui::Text("Last Mouse Position: %s", Debug::ToString(m_LastMousePosition).c_str());
     ImGui::Text("Initial View: %s", Debug::ToString(m_InitialView).c_str());
-    ImGui::Text("Initial Click Position: %s", Debug::ToString(m_InitialClickPosition).c_str());
-    ImGui::Text("Current View: %s", Debug::ToString(m_CurrentView).c_str());
-    ImGui::Text("Current Click Position: %s", Debug::ToString(m_CurrentClickPosition).c_str());
-    ImGui::Text("Delta: %s", Debug::ToString(m_LastDelta).c_str());
 }
 
 float ax::NodeEditor::NavigateAction::NextZoomLevel(float currentZoom, ZoomDirection direction) const
@@ -147,4 +114,25 @@ float ax::NodeEditor::NavigateAction::NextZoomLevel(float currentZoom, ZoomDirec
         closestZoomIndex = ImMax(closestZoomIndex - 1, 0);
 
     return c_ConfigZoomLevels[closestZoomIndex];
+}
+
+void ax::NodeEditor::NavigateAction::ApplyZoom(ImGuiEx::CanvasView& view, const ImVec2& worldZoomPoint, ZoomDirection direction) const
+{
+    auto newScale = NextZoomLevel(view.Scale, direction);
+
+    auto localPosition = view.ToLocal(worldZoomPoint);
+    view.SetScale(newScale);
+    auto worldPosition = view.ToWorld(localPosition);
+    auto originOffset  = worldZoomPoint - worldPosition;
+    view.SetOrigin(view.Origin + originOffset);
+}
+
+ax::NodeEditor::NavigateAction::ZoomDirection ax::NodeEditor::NavigateAction::WheelToZoomDirection(float mouseWheel) const
+{
+    if (mouseWheel > 0.0f)
+        return ZoomDirection::In;
+    else if (mouseWheel < 0.0f)
+        return ZoomDirection::Out;
+    else
+        return ZoomDirection::Match;
 }

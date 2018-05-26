@@ -29,7 +29,10 @@ bool ax::NodeEditor::Editor::Begin(const ImVec2& size)
 
     ImGui::GetWindowDrawList()->AddRectFilled(m_Canvas.ViewRect().Min, m_Canvas.ViewRect().Max, c_ConfigBackgroundColor);
 
-    Drawing::Grid(*ImGui::GetWindowDrawList(), m_Canvas.ViewRect(), c_ConfigGridSize, c_ConfigGridColor, m_Canvas.ViewScale());
+    m_Canvas.Suspend();
+    Drawing::Grid(*ImGui::GetWindowDrawList(),
+        m_Canvas.ContentRect(), m_Canvas.ViewOrigin(), c_ConfigGridSize * m_Canvas.ViewScale(), c_ConfigGridColor);
+    m_Canvas.Resume();
 
     return true;
 }
@@ -71,10 +74,13 @@ void ax::NodeEditor::Editor::NavigateTo(const ImRect& rect, bool immediate)
 void ax::NodeEditor::Editor::SetView(const ImVec2& origin, float scale)
 {
     m_Canvas.SetView(origin, scale);
+    m_CanvasView = m_Canvas.View();
+}
 
-    m_CanvasView                = m_Canvas.View();
-    //m_CanvasView.Origin        += m_Canvas.ContentRect().Min;
-    //m_CanvasView.RoundedOrigin += m_Canvas.ContentRect().Min;
+void ax::NodeEditor::Editor::SetView(const ImGuiEx::CanvasView& view)
+{
+    m_Canvas.SetView(view);
+    m_CanvasView = m_Canvas.View();
 }
 
 const ImGuiEx::CanvasView& ax::NodeEditor::Editor::View() const
@@ -128,6 +134,7 @@ void ax::NodeEditor::Editor::Debug(bool inWindow)
     {
         ImGui::TextUnformatted("Input State");
         ImGui::Indent();
+        ImGui::Text("Mouse: %s", Debug::ToString(m_InputState.MousePosition).c_str());
         ImGui::TextUnformatted("Hovered: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Hovered);
         ImGui::TextUnformatted("Active: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Active);
         ImGui::TextUnformatted("Clicked: "); ImGui::SameLine(0.0f, 0.0f); objectHeader(m_InputState.Object.Clicked);
@@ -166,9 +173,11 @@ void ax::NodeEditor::Editor::Debug(bool inWindow)
                     highlightNode(node, IM_COL32(255, 0, 0, 255));
             }
         }
-
-        highlightNode(m_InputState.Node.Hovered, IM_COL32(255,   0, 0, 255));
-        highlightNode(m_InputState.Node.Active,  IM_COL32(255, 255, 0, 255));
+        if (ImGui::CollapsingHeader("Actions", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            if (ImGui::CollapsingHeader("Navigate", ImGuiTreeNodeFlags_DefaultOpen))
+                m_NavigateAction.Debug();
+        }
     }
 
     if (inWindow)
@@ -178,6 +187,8 @@ void ax::NodeEditor::Editor::Debug(bool inWindow)
 ax::NodeEditor::InputState ax::NodeEditor::Editor::BuildInputState()
 {
     InputState result;
+
+    result.MousePosition = ImGui::GetIO().MousePos;
 
     if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
         return result;
@@ -262,16 +273,11 @@ void ax::NodeEditor::Editor::ProcessActions(const InputState& inputState)
         {
             if (!possibleAction)
                 possibleAction = action;
-            else
-                action->Dismiss();
         }
     }
 
     if (nextAction)
         m_CurrentAction = nextAction;
-
-    if (possibleAction)
-        possibleAction->Dismiss();
 
     m_PossibleAction = possibleAction;
 }

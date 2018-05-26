@@ -22,6 +22,7 @@ struct Action
     virtual Result Accept(const InputState& inputState) = 0;
     virtual bool Process(const InputState& inputState) = 0;
     virtual void Dismiss() {}
+    virtual void Cancel() {}
 
     virtual ImGuiMouseCursor Cursor() const { return ImGuiMouseCursor_Arrow; }
 

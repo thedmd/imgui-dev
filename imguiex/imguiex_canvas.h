@@ -12,14 +12,26 @@ struct CanvasView
 
     void Set(const ImVec2& origin, float scale)
     {
-        Origin        = origin;
-        RoundedOrigin = ImFloor(origin);
-        Scale         = scale;
-        InvScale      = scale ? 1.0f / scale : 0.0f;
+        SetOrigin(origin);
+        SetScale(scale);
     }
 
-    ImVec2   ToWorld(const ImVec2& point) const { return point * Scale + RoundedOrigin;      }
+    void SetOrigin(const ImVec2& origin)
+    {
+        Origin        = origin;
+        RoundedOrigin = ImFloor(origin);
+    }
+
+    void SetScale(float scale)
+    {
+        Scale    = scale;
+        InvScale = scale ? 1.0f / scale : 0.0f;
+    }
+
+    ImVec2 ToWorld(const ImVec2& point) const { return point * Scale + RoundedOrigin;      }
     ImVec2 ToLocal(const ImVec2& point) const { return (point - RoundedOrigin) * InvScale; }
+    ImRect ToWorld(const ImRect& rect) const { return ImRect(ToWorld(rect.Min), ToWorld(rect.Max)); }
+    ImRect ToLocal(const ImRect& rect) const { return ImRect(ToLocal(rect.Min), ToLocal(rect.Max)); }
 };
 
 struct Canvas
