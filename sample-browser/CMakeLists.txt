@@ -17,8 +17,10 @@ set(_sources
 )
 
 set(_sources_glfw
-    ${CMAKE_SOURCE_DIR}/imgui/examples/opengl3_example/imgui_impl_glfw_gl3.h
-    ${CMAKE_SOURCE_DIR}/imgui/examples/opengl3_example/imgui_impl_glfw_gl3.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/examples/imgui_impl_glfw.h
+    ${CMAKE_SOURCE_DIR}/imgui/examples/imgui_impl_glfw.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/examples/imgui_impl_opengl2.h
+    ${CMAKE_SOURCE_DIR}/imgui/examples/imgui_impl_opengl2.cpp
     main-glfw.cpp
 )
 
@@ -64,7 +66,7 @@ elseif (APPLE)
 
     target_include_directories(${PROJECT_NAME} PRIVATE
         ${OPENGL_INCLUDE_DIR}
-        ${CMAKE_SOURCE_DIR}/imgui/examples/opengl3_example
+        ${CMAKE_SOURCE_DIR}/imgui/examples
     )
 
     target_link_libraries(${PROJECT_NAME} PRIVATE
