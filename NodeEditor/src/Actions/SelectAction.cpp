@@ -6,13 +6,19 @@ ax::NodeEditor::Action::Result ax::NodeEditor::SelectAction::Accept(const InputS
 {
     IM_ASSERT(!m_IsActive);
 
-    if (inputState.Canvas.Active && ImGui::IsMouseDragging())
+    if (inputState.Canvas.Active && ImGui::IsMouseDragging(c_ConfigSelectButtonIndex, m_Editor.View().InvScale))
     {
         m_IsActive          = true;
-        m_StartRectPosition = ImGui::GetMousePos();
+        m_StartRectPosition = inputState.MousePosition;
         m_EndRectPosition   = m_StartRectPosition;
 
         return Yes;
+    }
+    else if (inputState.Canvas.Clicked)
+    {
+        m_Editor.DeselectAll();
+
+        return No;
     }
     else if (inputState.Node.Clicked || inputState.Pin.Clicked)
     {
@@ -24,44 +30,30 @@ ax::NodeEditor::Action::Result ax::NodeEditor::SelectAction::Accept(const InputS
 
         return No;
     }
-    else if (inputState.Canvas.Clicked)
-    {
-        m_Editor.DeselectAll();
-
-        return No;
-    }
 
     if (inputState.Node.Hovered)
         return Possible;
-
-    //auto& io = ImGui::GetIO();
-
-    //if (inputState.Node.Hovered && ImGui::IsMouseSelectging(c_ConfigSelectNodeButtonIndex, 0.0f))
-    //{
-    //    m_IsActive          = true;
-    //    //m_InitialView       = m_Editor.View();
-    //    //m_LastMousePosition = m_InitialView.ToWorld(io.MouseClickedPos[c_ConfigScrollButtonIndex]);
-
-    //    return Yes;
-    //}
-
-    //if (inputState.Node.Hovered)
-    //    return Possible;
 
     return No;
 }
 
 bool ax::NodeEditor::SelectAction::Process(const InputState& inputState)
 {
-    IM_ASSERT(m_IsActive);
+    if (!m_IsActive)
+        return false;
 
-    if (ImGui::IsMouseDragging())
+    if (ImGui::IsMouseDragging(c_ConfigSelectButtonIndex, 0.0f))
     {
         m_EndRectPosition = ImGui::GetMousePos();
     }
     else
     {
+        auto nodes = m_Editor.FindObjectsInside(SelectionRect(), ObjectTypes::Nodes);
+        m_Editor.Select(nodes);
+
         Dismiss();
+
+        return true;
     }
 
     //if (ImGui::IsMouseSelectging(c_ConfigScrollButtonIndex, 0.0f))

@@ -90,6 +90,14 @@ void ax::NodeEditor::NavigateAction::Debug()
     ImGui::Text("Initial View: %s", Debug::ToString(m_InitialView).c_str());
 }
 
+void ax::NodeEditor::NavigateAction::Update(const InputState& inputState)
+{
+    if (m_IsActive)
+        Process(inputState);
+    else
+        Accept(inputState);
+}
+
 float ax::NodeEditor::NavigateAction::NextZoomLevel(float currentZoom, ZoomDirection direction) const
 {
     int   closestZoomIndex    = -1;

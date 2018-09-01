@@ -19,10 +19,13 @@ bool ax::NodeEditor::Editor::Begin(const ImVec2& size)
 
     m_CanvasView        = m_Canvas.View();
     m_CanvasContentView = m_Canvas.ContentView();
-    //m_CanvasView.Origin        += m_Canvas.ContentRect().Min;
-    //m_CanvasView.RoundedOrigin += m_Canvas.ContentRect().Min;
 
     m_InputState = BuildInputState();
+
+    // Navigate action do not collide with remaining ones.
+    // If that will be the case in the future consider splitting action
+    // into lines where they can be easily conditionally parallelized.
+    m_NavigateAction.Update(m_InputState);
 
     ProcessActions(m_InputState);
 
@@ -85,6 +88,8 @@ void ax::NodeEditor::Editor::NavigateTo(const ImRect& rect, bool immediate)
 
 void ax::NodeEditor::Editor::SetView(const ImVec2& origin, float scale)
 {
+    //m_NextCanvasView.Set(origin, scale);
+
     m_Canvas.SetView(origin, scale);
     m_CanvasView        = m_Canvas.View();
     m_CanvasContentView = m_Canvas.ContentView();
@@ -92,6 +97,8 @@ void ax::NodeEditor::Editor::SetView(const ImVec2& origin, float scale)
 
 void ax::NodeEditor::Editor::SetView(const ImGuiEx::CanvasView& view)
 {
+    //m_NextCanvasView.Set(view.Origin, view.Scale);
+
     m_Canvas.SetView(view);
     m_CanvasView        = m_Canvas.View();
     m_CanvasContentView = m_Canvas.ContentView();
@@ -110,10 +117,13 @@ const ImGuiEx::CanvasView& ax::NodeEditor::Editor::ContentView() const
 void ax::NodeEditor::Editor::SuspendView()
 {
     m_Canvas.Suspend();
+    ImGui::GetWindowDrawList()->PushClipRect(
+        m_Canvas.ContentRect().Min, m_Canvas.ContentRect().Max, true);
 }
 
 void ax::NodeEditor::Editor::ResumeView()
 {
+    ImGui::GetWindowDrawList()->PopClipRect();
     m_Canvas.Resume();
 }
 
@@ -135,6 +145,28 @@ void ax::NodeEditor::Editor::DeselectAll()
 const ax::NodeEditor::Selection& ax::NodeEditor::Editor::SelectedObjects() const
 {
     return m_Selection;
+}
+
+ImVector<ax::NodeEditor::Object*> ax::NodeEditor::Editor::FindObjectsInside(const ImRect& rect, ObjectTypes mask)
+{
+    ImVector<ax::NodeEditor::Object*> result;
+
+    if ((mask & ObjectTypes::Pins) == ObjectTypes::Pins)
+    {
+    }
+
+    if ((mask & ObjectTypes::Nodes) == ObjectTypes::Nodes)
+    {
+        for (auto node : m_Nodes.View())
+            if (rect.Overlaps(node->m_Bounds))
+                result.push_back(node);
+    }
+
+    if ((mask & ObjectTypes::Links) == ObjectTypes::Links)
+    {
+    }
+
+    return result;
 }
 
 ax::NodeEditor::NodeBuilder ax::NodeEditor::Editor::BuildNode(NodeId id)

@@ -1,5 +1,10 @@
 # include "NodeEditor_Internal.h"
 
+bool ax::NodeEditor::Selection::IsSelected(Object* object) const
+{
+    return Objects.contains(object);
+}
+
 bool ax::NodeEditor::Selection::Select(Object* object, SelectOperation operation)
 {
     switch (operation)
@@ -45,7 +50,12 @@ bool ax::NodeEditor::Selection::Select(const ImVector<Object*>& objects, SelectO
 
     bool any = false;
     for (auto o : objects)
+    {
         any |= Select(o, operation);
+
+        if (operation == SelectOperation::Replace)
+            operation = SelectOperation::Add;
+    }
 
     return any;
 }

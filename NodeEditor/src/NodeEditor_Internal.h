@@ -14,6 +14,7 @@ static const ImU32  c_ConfigBackgroundColor     = ImColor( 60,  60,  70, 200);
 static const float  c_ConfigGridSize            = 50.0f;//32.0f;
 static const ImU32  c_ConfigGridColor           = ImColor(120, 120, 120,  40);
 static const int    c_ConfigDragNodeButtonIndex = 0;
+static const int    c_ConfigSelectButtonIndex   = 0;
 static const int    c_ConfigScrollButtonIndex   = 1;
 
 struct Object;
@@ -37,6 +38,18 @@ enum class ObjectType : uint8_t
     Link,
     Canvas
 };
+
+enum class ObjectTypes : uint8_t
+{
+    None      = 0,
+    Pins      = 1 << static_cast<uint8_t>(ObjectType::Pin),
+    Nodes     = 1 << static_cast<uint8_t>(ObjectType::Node),
+    Links     = 1 << static_cast<uint8_t>(ObjectType::Link),
+    Canvases  = 1 << static_cast<uint8_t>(ObjectType::Canvas),
+    All       = Pins | Nodes | Links | Canvases
+};
+AX_BITMASK_TYPE(ObjectTypes);
+
 struct ObjectId final: SafePointerType<ObjectId>
 {
     using SafePointerType::SafePointerType;
@@ -170,6 +183,8 @@ enum class SelectOperation
 
 struct Selection
 {
+    bool IsSelected(Object* object) const;
+
     bool Select(Object* object, SelectOperation operation = SelectOperation::Replace);
     bool Select(const ImVector<Object*>& objects, SelectOperation operation = SelectOperation::Replace);
 

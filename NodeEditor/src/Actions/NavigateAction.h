@@ -19,6 +19,8 @@ struct NavigateAction final
 
     virtual void Debug() override;
 
+    void Update(const InputState& inputState);
+
 private:
     enum class ZoomDirection { In, Out, Match };
     float NextZoomLevel(float currentZoom, ZoomDirection direction) const;

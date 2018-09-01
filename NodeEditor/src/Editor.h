@@ -30,6 +30,8 @@ struct Editor
     void DeselectAll();
     const Selection& SelectedObjects() const;
 
+    ImVector<Object*> FindObjectsInside(const ImRect& rect, ObjectTypes mask = ObjectTypes::All);
+
     NodeBuilder BuildNode(NodeId id);
 
     void Debug(bool inWindow = true);
@@ -47,6 +49,7 @@ private:
     ImGuiEx::Canvas     m_Canvas;
     ImGuiEx::CanvasView m_CanvasView;
     ImGuiEx::CanvasView m_CanvasContentView;
+    ImGuiEx::CanvasView m_NextCanvasView;
 
     ObjectCollection<Pin>  m_Pins;
     ObjectCollection<Node> m_Nodes;
@@ -60,9 +63,9 @@ private:
     NavigateAction      m_NavigateAction;
     SelectAction        m_SelectAction;
     DragAction          m_DragNodeAction;
-    Action*             m_Actions[3]
+    Action*             m_Actions[2]
     {
-        &m_NavigateAction,
+        //&m_NavigateAction,
         &m_SelectAction,
         &m_DragNodeAction
     };
