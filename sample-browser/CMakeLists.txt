@@ -7,6 +7,7 @@ set(_sources
     samples/drawlist-transformation.cpp
     samples/imguiex-canvas.cpp
     samples/node-editor.cpp
+    samples/hit-test.cpp
 
     support/picojson.h
     support/property.h
