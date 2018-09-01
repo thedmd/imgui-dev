@@ -6,6 +6,7 @@ if (NOT TARGET imgui)
         ${_imgui_SourceDir}/imconfig.h
         ${_imgui_SourceDir}/imgui_internal.h
         ${_imgui_SourceDir}/imgui.cpp
+        ${_imgui_SourceDir}/imgui_widgets.cpp
         ${_imgui_SourceDir}/imgui_draw.cpp
         ${_imgui_SourceDir}/imgui_demo.cpp
     )
