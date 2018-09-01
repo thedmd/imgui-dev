@@ -362,7 +362,8 @@ struct BlueprintNodeSample: Sample
             ImGui::BeginHorizontal("header");
                 ImGui::Spring(0.0, 20.0f);
                 NodeIcon(ImColor(255, 255, 255, 255));
-                ImGui::SameLine(0.0f, pinIconPadding);
+                ImGui::Spring(0.0, pinIconPadding);
+                //ImGui::SameLine(0.0f, pinIconPadding);
                 ImGui::TextUnformatted("Do N");
 //                     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 //                     ImGui::TextUnformatted("Comment maybe?");
